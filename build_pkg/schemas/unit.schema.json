@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Shard Dominion Unit",
+  "type": "object",
+  "required": ["id", "name", "faction", "cost", "hp", "speed", "vision", "footprint", "tags"],
+  "properties": {
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "faction": { "type": "string" },
+    "cost": { "type": "integer", "minimum": 0 },
+    "hp": { "type": "integer", "minimum": 1 },
+    "speed": { "type": "number", "minimum": 0 },
+    "vision": { "type": "integer", "minimum": 1 },
+    "footprint": { "type": "object", "properties": { "w": {"type":"integer"}, "h": {"type":"integer"} }, "required": ["w", "h"] },
+    "armorType": { "type": "string" },
+    "weaponIds": { "type": "array", "items": { "type": "string" } },
+    "abilities": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

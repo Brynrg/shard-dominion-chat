@@ -55,3 +55,15 @@ A Vite + TypeScript scaffold consuming [speedrungames-sdk](https://github.com/Br
    deploy PR won't auto-merge.
 4. **No secrets in the repo.** The bundle ships to every player.
 5. **Never deploy by hand into the portal.** Push, or `npm run deploy:portal`.
+
+## Project spec (staged by orchestrator)
+
+The authoritative game spec is the **`build_pkg/`** directory (Shard Dominion
+chat-version build package, staged verbatim from the source zip). Entry points:
+`build_pkg/README.md` and `build_pkg/docs/00_MASTER_EXECUTION_SPEC.md`; phased
+work orders in `build_pkg/agent_tasks/PHASE_0..10`; data schemas in
+`build_pkg/schemas/`. Where the package's repo_scaffold conflicts with this
+template's deploy contract (relative paths, `base: "./"`, manifest, CI), the
+deploy contract above wins. Definition of done: game live and playable at
+`https://speedrungames.net/games/shard-dominion-chat/` via push-to-main
+auto-deploy.
