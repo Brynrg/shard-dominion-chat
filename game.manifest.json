@@ -1,13 +1,13 @@
 {
-  "slug": "__SLUG__",
-  "title": "__TITLE__",
-  "description": "__DESCRIPTION__",
-  "framework": "vite",
+  "slug": "shard-dominion-chat",
+  "title": "Shard Dominion: Chat Version",
+  "description": "Classic sci-fi RTS on Aether Prime — bake-off build 2, from the chat-version build package",
+  "framework": "vite-phaser",
   "category": "arcade",
   "supportsMobile": true,
   "version": "0.1.0",
   "emoji": "🎮",
   "entry": "index.html",
   "buildCommand": "npm run build",
-  "repo": "Brynrg/__SLUG__"
+  "repo": "Brynrg/shard-dominion-chat"
 }
