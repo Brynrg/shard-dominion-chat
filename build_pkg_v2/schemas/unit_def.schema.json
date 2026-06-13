@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UnitDef",
+  "type": "object",
+  "required": ["id", "displayName", "role", "cost", "buildTimeSec", "hp", "armorType", "speedPxPerSec", "sightTiles", "tags"],
+  "properties": {
+    "id": { "type": "string" },
+    "displayName": { "type": "string" },
+    "faction": { "type": "string" },
+    "role": { "type": "string" },
+    "cost": { "type": "object" },
+    "buildTimeSec": { "type": "number" },
+    "hp": { "type": "number" },
+    "armorType": { "type": "string" },
+    "speedPxPerSec": { "type": "number" },
+    "sightTiles": { "type": "number" },
+    "weaponIds": { "type": "array", "items": { "type": "string" } },
+    "abilities": { "type": "array", "items": { "type": "string" } },
+    "tags": { "type": "array", "items": { "type": "string" } }
+  }
+}

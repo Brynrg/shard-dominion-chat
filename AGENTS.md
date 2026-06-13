@@ -67,3 +67,19 @@ template's deploy contract (relative paths, `base: "./"`, manifest, CI), the
 deploy contract above wins. Definition of done: game live and playable at
 `https://speedrungames.net/games/shard-dominion-chat/` via push-to-main
 auto-deploy.
+
+## Continuation spec v2 (staged by orchestrator 2026-06-13)
+
+The authoritative NEXT-STEP spec is **`build_pkg_v2/`** (ChatGPT "Execution Plan v2",
+staged verbatim). Entry: `build_pkg_v2/00_READ_ME_FIRST.md`, then docs/01_CURRENT_REPO_AUDIT,
+docs/02_MASTER_BUILD_DIRECTIVE, then execute `build_pkg_v2/tickets/` in numerical order
+(T00–T06 architecture repair FIRST — do not add feature layers until those pass — then
+T10/T14/T20/T30). Phase gates: typecheck+build+test green after every ticket.
+
+DEPLOY-CONTRACT GUARDRAIL (overrides the package where they conflict): the package says to
+"apply repo_patch_files/AGENTS.md + PROJECT_PLAN.md into the repo." You may add PROJECT_PLAN.md,
+but DO NOT clobber this repo's deploy contract — keep the template package.json CI scripts
+(`build`, `typecheck`, `lint:paths`, `test`), keep `base: "./"` in vite.config, keep relative
+asset paths, keep game.manifest.json. CI must stay green or the auto-deploy PR won't merge
+(this exact gap broke game 3's deploy). Continuation builds beyond the frozen `first-pass`
+tag — the bake-off comparison snapshot is already preserved.

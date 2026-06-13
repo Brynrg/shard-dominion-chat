@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MissionDef",
+  "type": "object",
+  "required": ["id", "title", "faction", "briefing", "mapId", "objectives", "winConditions", "loseConditions"],
+  "properties": {
+    "id": { "type": "string" },
+    "title": { "type": "string" },
+    "faction": { "type": "string" },
+    "briefing": { "type": "string" },
+    "mapId": { "type": "string" },
+    "startingCredits": { "type": "number" },
+    "objectives": { "type": "array" },
+    "optionalObjectives": { "type": "array" },
+    "scriptedEvents": { "type": "array" },
+    "winConditions": { "type": "array" },
+    "loseConditions": { "type": "array" }
+  }
+}
