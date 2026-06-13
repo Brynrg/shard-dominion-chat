@@ -1,0 +1,129 @@
+import type { Position, Unit, Tile } from '../core/types';
+import { UnitType, TileType } from '../core/types';
+
+export class HarvestSystem {
+    private tiles: Map<string, Tile> = new Map();
+    private units: Map<string, Unit> = new Map();
+    private processorPosition: Position = { x: 400, y: 300 }; // Default processor position
+
+    setTile(x: number, y: number, tile: Tile): void {
+        const key = `${x},${y}`;
+        this.tiles.set(key, tile);
+    }
+
+    getTile(x: number, y: number): Tile | null {
+        return this.tiles.get(`${x},${y}`) || null;
+    }
+
+    addUnit(unit: Unit): void {
+        this.units.set(unit.id, unit);
+    }
+
+    setProcessorPosition(position: Position): void {
+        this.processorPosition = position;
+    }
+
+    updateUnits(): void {
+        for (const [unitId, unit] of this.units) {
+            if (unit.type === UnitType.HARVESTER) {
+                this.updateHarvester(unitId, unit);
+            }
+        }
+    }
+
+    private updateHarvester(unitId: string, unit: Unit): void {
+        // If harvester is at processor and has cargo, deposit it
+        if (unit.carrying > 0) {
+            const distance = this.getDistance(unit.position, this.processorPosition);
+            if (distance < 30) { // Close enough to processor
+                // Deposit cargo
+                unit.carrying = 0;
+                this.units.set(unitId, unit);
+                return;
+            }
+
+            // Move towards processor
+            this.moveToTarget(unit, this.processorPosition);
+        } else {
+            // Look for nearby shard tiles
+            const nearbyShardTile = this.findNearbyShardTile(unit.position);
+            if (nearbyShardTile) {
+                const tileDistance = this.getDistance(unit.position, nearbyShardTile);
+                
+                if (tileDistance < 20) { // Close enough to harvest
+                    // Harvest
+                    unit.carrying = Math.min(unit.carrying + 10, unit.maxCarrying);
+                    nearbyShardTile.hasShards = false;
+                    this.tiles.set(`${nearbyShardTile.x},${nearbyShardTile.y}`, nearbyShardTile);
+                } else {
+                    // Move towards tile
+                    this.moveToTarget(unit, nearbyShardTile);
+                }
+            } else {
+                // No nearby shards, wander randomly
+                if (!unit.targetPosition || Math.random() < 0.02) {
+                    unit.targetPosition = {
+                        x: Math.random() * 600,
+                        y: Math.random() * 400
+                    };
+                }
+            }
+        }
+
+        this.units.set(unitId, unit);
+    }
+
+    private findNearbyShardTile(position: Position): Tile | null {
+        let closestTile: Tile | null = null;
+        let minDistance = Infinity;
+
+        for (const tile of this.tiles.values()) {
+            if (tile.type === TileType.SHARD_FIELD && tile.hasShards) {
+                const distance = this.getDistance(position, tile);
+                if (distance < 100 && distance < minDistance) {
+                    minDistance = distance;
+                    closestTile = tile;
+                }
+            }
+        }
+
+        return closestTile;
+    }
+
+    private moveToTarget(unit: Unit, target: Position): void {
+        const dx = target.x - unit.position.x;
+        const dy = target.y - unit.position.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance > 2) {
+            const speed = unit.speed / 1000; // Convert to units per ms
+            const ratio = Math.min(speed * 16 / distance, 1); // Assuming 60fps
+            
+            unit.position.x += dx * ratio;
+            unit.position.y += dy * ratio;
+            unit.targetPosition = target;
+        } else {
+            unit.targetPosition = null;
+        }
+    }
+
+    private getDistance(pos1: Position, pos2: Position): number {
+        const dx = pos1.x - pos2.x;
+        const dy = pos1.y - pos2.y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    getTotalCarrying(): number {
+        let total = 0;
+        for (const unit of this.units.values()) {
+            if (unit.type === UnitType.HARVESTER) {
+                total += unit.carrying;
+            }
+        }
+        return total;
+    }
+
+    getTiles(): Tile[] {
+        return Array.from(this.tiles.values());
+    }
+}
