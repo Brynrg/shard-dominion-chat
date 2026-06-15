@@ -11,6 +11,13 @@ export const sampleUnits: any[] = [
         maxCarrying: 100,
         faction: 'vanguard',
         isSelected: false,
-        visionRadius: 5
+        visionRadius: 5,
+        hp: 100,
+        maxHp: 100,
+        isDead: false,
+        attackRange: 0,
+        attackDamage: 0,
+        attackCooldown: 0,
+        lastAttackTime: 0
     }
 ];

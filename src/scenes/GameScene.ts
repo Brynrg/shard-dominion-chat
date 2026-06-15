@@ -1,4 +1,3 @@
-import { Game } from 'speedrungames-sdk/game';
 import { GameState } from '../core/GameState';
 import type { Position } from '../core/types';
 import { TileType } from '../core/types';
@@ -7,38 +6,47 @@ import { MovementSystem } from '../systems/MovementSystem';
 import { PathfindingSystem } from '../systems/PathfindingSystem';
 import { HarvestSystem } from '../systems/HarvestSystem';
 import { PlanetAgitationSystem } from '../systems/PlanetAgitationSystem';
+import { CombatSystem } from '../systems/CombatSystem';
 import { Hud } from '../ui/Hud';
 import { sampleBuildings } from '../data/sampleBuildings';
 import { sampleUnits } from '../data/sampleUnits';
 import { sampleTerrain } from '../data/sampleTerrain';
 
-export class GameScene {
-    private game: Game;
+class GameScene {
     private canvas: HTMLCanvasElement;
     private gameState: GameState;
-    private _inputSystem: InputSystem;
     private movementSystem: MovementSystem;
     private pathfindingSystem: PathfindingSystem;
     private harvestSystem: HarvestSystem;
     private _planetAgitationSystem: PlanetAgitationSystem;
+    
+    private combatSystem: CombatSystem;
     private hud: Hud;
     private debugMode: boolean = false;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
-        this.game = new Game(canvas);
+        // Resize canvas to match parent element
+        const parent = canvas.parentElement;
+        if (parent) {
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+        }
         this.gameState = GameState.getInstance();
         this.harvestSystem = new HarvestSystem();
         this._planetAgitationSystem = new PlanetAgitationSystem();
+        this.combatSystem = new CombatSystem(this.gameState.getState());
 
         // Initialize systems
-        this._inputSystem = new InputSystem(canvas, this.handleAction.bind(this));
+        new InputSystem(canvas, this.handleAction.bind(this));
         this.movementSystem = new MovementSystem();
+        this.movementSystem.setPlanetAgitationSystem(this._planetAgitationSystem);
         this.pathfindingSystem = new PathfindingSystem();
-        this.hud = new Hud(document.getElementById('app')!);
+        this.hud = new Hud(this.canvas);
 
         this.initializeGame();
         this.setupEventListeners();
+        this.start();
     }
 
     private initializeGame(): void {
@@ -53,13 +61,12 @@ export class GameScene {
         // Add units
         sampleUnits.forEach(unit => {
             this.gameState.addUnit(unit);
-            this.movementSystem.addUnit(unit);
             this.harvestSystem.addUnit(unit);
         });
 
         // Add terrain
-        sampleTerrain.forEach((row, y) => {
-            row.forEach((tile, x) => {
+        sampleTerrain.forEach((row: any[], y: number) => {
+            row.forEach((tile: any, x: number) => {
                 this.gameState.setTile(x, y, tile);
                 this.harvestSystem.setTile(x, y, tile);
             });
@@ -67,6 +74,7 @@ export class GameScene {
 
         // Set processor position for harvest system
         this.harvestSystem.setProcessorPosition({ x: 400, y: 300 });
+        this.harvestSystem.setPlanetAgitationSystem(this._planetAgitationSystem);
 
         // Initialize pathfinding system
         this.pathfindingSystem.setTiles(state.tiles);
@@ -135,20 +143,26 @@ export class GameScene {
     }
 
     gameLoop = () => {
+        const state = this.gameState.getState();
+        
         // Update systems
         this.harvestSystem.updateUnits();
         this._planetAgitationSystem.update();
+        this.combatSystem.autoAcquireTargets();
+        this.combatSystem.updateUnits();
+        this.combatSystem.updateProjectiles(16);
+        this.combatSystem.checkUnitDeaths();
+        this.combatSystem.checkBuildingDeaths();
 
         // Update movement
-        this.movementSystem.moveUnits(16);
+        this.movementSystem.moveUnits(state.units, 16);
 
         // Update fog of war
         this.gameState.updateFogOfWar();
 
         // Update HUD
-        const state = this.gameState.getState();
-        const totalCarrying = this.harvestSystem.getTotalCarrying();
-        this.gameState.setCredits(100 + Math.floor(totalCarrying / 10));
+        const totalDeposited = this.harvestSystem.getTotalDeposited();
+        this.gameState.setCredits(100 + Math.floor(totalDeposited / 10));
         this.gameState.setPlanetAgitation(this._planetAgitationSystem.getCurrentAgitation());
         this.hud.update(state);
 
@@ -175,13 +189,22 @@ export class GameScene {
     };
 
     private render(): void {
-        const ctx = this.game.ctx;
+        const ctx = this.canvas.getContext('2d')!;
         const width = this.canvas.clientWidth;
         const height = this.canvas.clientHeight;
 
         // Clear canvas
         ctx.fillStyle = '#0b0b10';
         ctx.fillRect(0, 0, width, height);
+
+        // Get camera position
+        const state = this.gameState.getState();
+        const camera = state.camera;
+
+        // Save context and apply camera transform
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+        ctx.scale(camera.zoom, camera.zoom);
 
         // Draw terrain - simplified for vertical slice
         this.renderTerrain(ctx, width, height);
@@ -192,6 +215,9 @@ export class GameScene {
         // Draw units
         this.renderUnits(ctx);
 
+        // Draw move markers
+        this.renderMoveMarkers(ctx);
+
         // Draw processor
         this.renderProcessor(ctx);
 
@@ -200,6 +226,9 @@ export class GameScene {
 
         // Draw minimap
         this.renderMinimap(ctx, width, height);
+
+        // Restore context
+        ctx.restore();
     }
 
     private renderTerrain(ctx: CanvasRenderingContext2D, width: number, height: number): void {
@@ -281,6 +310,15 @@ export class GameScene {
             ctx.arc(unit.position.x, unit.position.y, 10, 0, Math.PI * 2);
             ctx.fill();
 
+            // Selection ring for selected units
+            if (unit.isSelected) {
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(unit.position.x, unit.position.y, 14, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
             // Harvester cargo indicator
             if (unit.type === 'harvester' && unit.carrying > 0) {
                 ctx.fillStyle = '#ffd700';
@@ -297,6 +335,32 @@ export class GameScene {
         });
     }
 
+    private renderMoveMarkers(ctx: CanvasRenderingContext2D): void {
+        const state = this.gameState.getState();
+        const selectedUnitIds = state.selectedUnits;
+
+        // Draw move markers for selected units
+        state.units.forEach(unit => {
+            if (selectedUnitIds.includes(unit.id) && unit.targetPosition) {
+                // Draw a cross marker at the target position
+                const x = unit.targetPosition.x;
+                const y = unit.targetPosition.y;
+                const size = 8;
+
+                ctx.strokeStyle = '#00ff00';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                // Horizontal line
+                ctx.moveTo(x - size, y);
+                ctx.lineTo(x + size, y);
+                // Vertical line
+                ctx.moveTo(x, y - size);
+                ctx.lineTo(x, y + size);
+                ctx.stroke();
+            }
+        });
+    }
+
     private renderProcessor(ctx: CanvasRenderingContext2D): void {
             ctx.fillStyle = '#4169e1';
             ctx.fillRect(400, 300, 40, 40);
@@ -310,8 +374,8 @@ export class GameScene {
             const state = this.gameState.getState();
             const tileSize = 32;
 
-            state.tiles.forEach((row, y) => {
-                row.forEach((tile, x) => {
+            state.tiles.forEach((row: any[], y: number) => {
+                row.forEach((tile: any, x: number) => {
                     if (!tile.isVisible) {
                         // Unexplored - completely black
                         ctx.fillStyle = '#000000';
@@ -395,3 +459,6 @@ export class GameScene {
         this.gameLoop();
     }
 }
+
+export { GameScene };
+

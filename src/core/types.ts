@@ -3,6 +3,10 @@ export interface Position {
     y: number;
 }
 
+// Position aliases for clarity
+export type WorldCoord = Position;
+export type TileCoord = { x: number; y: number };
+
 export interface Size {
     width: number;
     height: number;
@@ -35,7 +39,8 @@ export interface Tile {
 export enum UnitType {
     HARVESTER = 'harvester',
     COMMANDER = 'commander',
-    SCOUT = 'scout'
+    SCOUT = 'scout',
+    RAIDER = 'raider'
 }
 
 export interface Unit {
@@ -49,12 +54,26 @@ export interface Unit {
     faction: string;
     isSelected: boolean;
     visionRadius: number;
+    hp: number;
+    maxHp: number;
+    isDead: boolean;
+    attackRange: number;
+    attackDamage: number;
+    attackCooldown: number;
+    lastAttackTime: number;
 }
 
 export enum BuildingType {
     PROCESSOR = 'processor',
     SILO = 'silo',
-    COMMAND_CENTER = 'command_center'
+    COMMAND_CENTER = 'command_center',
+    ANCHOR_LATTICE = 'anchor_lattice',
+    POWER_NODE = 'power_node',
+    FORGE = 'forge',
+    TURRET = 'turret',
+    RESEARCH_LAB = 'research_lab',
+    TITAN_WORM = 'titan_worm',
+    VOLATILE_BLOOM = 'volatile_bloom'
 }
 
 export interface Building {
@@ -64,6 +83,10 @@ export interface Building {
     bounds: Bounds;
     power: number;
     maxPower: number;
+    hp: number;
+    maxHp: number;
+    isPowered: boolean;
+    isDead: boolean;
 }
 
 export interface GameState {
@@ -89,6 +112,29 @@ export interface GameState {
         height: number;
         data: number[][];
     };
+    projectiles: Projectile[];
+    mission: MissionState | null;
+}
+
+export interface MissionState {
+    active: boolean;
+    objectives: MissionObjective[];
+    briefing: string;
+    startTime: number;
+    endTime: number | null;
+    winCondition: string;
+    loseCondition: string;
+    shardBloomActive: boolean;
+    forgeRaidActive: boolean;
+}
+
+export interface MissionObjective {
+    id: string;
+    description: string;
+    completed: boolean;
+    target: string;
+    current: number;
+    required: number;
 }
 
 export enum ActionType {
@@ -107,4 +153,28 @@ export interface HarvestData {
     tileX: number;
     tileY: number;
     amount: number;
+}
+
+export enum WeaponType {
+    PROJECTILE = 'projectile',
+    HITSCAN = 'hitscan',
+    MELEE = 'melee'
+}
+
+export interface Weapon {
+    type: WeaponType;
+    damage: number;
+    range: number;
+    cooldown: number;
+    speed?: number; // For projectiles
+}
+
+export interface Projectile {
+    id: string;
+    position: Position;
+    target: Position;
+    speed: number;
+    damage: number;
+    ownerFaction: string;
+    isDead: boolean;
 }

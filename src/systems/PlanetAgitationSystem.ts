@@ -2,15 +2,47 @@ export class PlanetAgitationSystem {
     private currentAgitation: number = 0;
     private maxAgitation: number = 100;
     private lastUpdate: number = Date.now();
+    private agitationEvents: Array<{ type: string; amount: number; time: number }> = [];
 
     update(): void {
-        // Simple agitation growth over time
+        // Simple base agitation growth over time
         const currentTime = Date.now();
         const deltaTime = currentTime - this.lastUpdate;
         this.lastUpdate = currentTime;
 
-        // Agitation grows slowly over time
-        this.currentAgitation = Math.min(this.currentAgitation + deltaTime / 10000, this.maxAgitation);
+        // Small passive agitation
+        this.currentAgitation = Math.min(this.currentAgitation + deltaTime / 20000, this.maxAgitation);
+    }
+
+    // Agitation from harvesting
+    addHarvestAgitation(amount: number = 1): void {
+        this.currentAgitation = Math.min(this.currentAgitation + amount, this.maxAgitation);
+        this.agitationEvents.push({ type: 'harvest', amount, time: Date.now() });
+    }
+
+    // Agitation from movement over deep crust
+    addMovementAgitation(amount: number = 0.5): void {
+        this.currentAgitation = Math.min(this.currentAgitation + amount, this.maxAgitation);
+        this.agitationEvents.push({ type: 'movement', amount, time: Date.now() });
+    }
+
+    // Agitation from explosions/combat (placeholder)
+    addExplosionAgitation(amount: number = 2): void {
+        this.currentAgitation = Math.min(this.currentAgitation + amount, this.maxAgitation);
+        this.agitationEvents.push({ type: 'explosion', amount, time: Date.now() });
+    }
+
+    // Agitation from buildings (placeholder)
+    addBuildingAgitation(amount: number = 1.5): void {
+        this.currentAgitation = Math.min(this.currentAgitation + amount, this.maxAgitation);
+        this.agitationEvents.push({ type: 'building', amount, time: Date.now() });
+    }
+
+    // Get local agitation around a position (for visual effects)
+    getLocalAgitation(_x: number, _y: number, _radius: number = 100): number {
+        // For now, just return current agitation
+        // Later, could calculate based on nearby events
+        return this.currentAgitation;
     }
 
     increaseAgitation(amount: number): void {

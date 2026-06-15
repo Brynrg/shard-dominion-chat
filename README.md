@@ -1,43 +1,99 @@
-# speedrungames-game-template
+# Shard Dominion - Chat Version
 
-Vite + TypeScript starter for games that ship on [speedrungames.net](https://speedrungames.net).
+A browser-based retro-modern sci-fi RTS where the economy wakes a hostile living planet. Harvest Aether Shards, build Anchor Lattice, manage Planet Agitation, and command your forces across the crystalline surface of Aether Prime.
 
-What you get out of the box:
+## What You Get
 
-- **Canvas game loop** with deltaTime, DPR-aware resize
-- **Millisecond-precision speedrun timer** with pause/resume, splits, finish
-- **Personal-best persistence** via `localStorage`
-- **HUD overlay** (time, PB, status)
-- **CI** that typechecks, builds, and verifies relative paths on every PR
-- **Netlify config** that just works — push to `main`, get a live site
+- **Real-time Strategy** with classic mechanics reimagined for a living planet
+- **Harvesting System** - Extract Aether Shards and deliver them to the processor
+- **Planet Agitation** - The planet reacts to your actions with shard blooms, glass storms, and Titan Worms
+- **Fog of War** - Explore the hostile terrain and expand your vision
+- **Vertical Slice** - Working prototype with harvester units, terrain types, and basic economy
+- **Canvas Rendering** - Custom game engine with smooth 60fps gameplay
 
-A playable demo (click N targets as fast as you can) ships in the template so a new repo deploys to a working game on day one.
+## Current Phase
 
-## Quickstart
+Phase 0: Vertical Slice Complete
+- ✅ Basic terrain with multiple tile types (grass, dirt, stone, shard fields, ridges, deep crust)
+- ✅ Harvester units that can move and carry resources
+- ✅ Processor building for resource deposit
+- ✅ Planet Agitation system (currently time-based)
+- ✅ Fog of war and minimap
+- ✅ Basic selection and movement
+
+## Controls
+
+- **Click** - Select units or move selected units
+- **D** - Toggle debug overlay (shows movement cost, worm risk, system stats)
+
+## Current Mechanics
+
+### Terrain Types
+- **Grass** - Basic terrain, low movement cost
+- **Dirt** - Standard terrain
+- **Stone** - Higher movement cost
+- **Shard Fields** - Resource-rich areas, medium cost
+- **Ridges** - Impassable terrain
+- **Deep Crust** - Heavy terrain, slows units
+
+### Units
+- **Harvester** - Collects Aether Shards and delivers to processor
+  - Carries up to 100 resource units
+  - Moves faster on open terrain
+
+### Buildings
+- **Processor** - Where harvesters deposit resources
+- **Command Center** - Central hub (placeholder)
+
+### Economy
+- Harvesters collect resources from shard fields
+- Resources must be deposited at processor to gain credits
+- Credits increase: 100 base + deposited resources ÷ 10
+
+### Planet Agitation
+- Currently increases over time
+- Planned: Will rise from harvesting, movement, construction, and combat
+
+## How to Run
 
 ```bash
-# 1. Create your game repo from this template:
-gh repo create Brynrg/game-<slug> --public \
-  --template Brynrg/speedrungames-game-template --clone
-cd game-<slug>
+# Install dependencies
 npm install
 
-# 2. Set the storage namespace.
-# In src/storage.ts, replace SLUG = "REPLACE_ME" with your slug.
+# Run development server
+npm run dev
 
-# 3. Build your game in src/main.ts (replace the gameplay section).
+# Build for production
+npm run build
 
-# 4. Run locally.
-npm run dev   # → http://localhost:5173
+# Run type checking
+npm run typecheck
 
-# 5. Push to main. CI runs (typecheck, build, path lint).
-# 6. Connect to Netlify (one-time): netlify.com → Add new site → import this repo → Deploy.
-# 7. In Brynrg/speedrungames, add one entry to apps/web/src/lib/games.data.json with proxyTo.
-
-# After that: every push to main on this repo updates the live game on speedrungames.net.
+# Lint paths for relative URLs
+npm run lint:paths
 ```
 
-See [AGENTS.md](AGENTS.md) for the full build playbook and API quick references.
+## Next Tickets (T10-T30)
+
+After architecture repairs (T00-T06) are complete:
+
+- **T10** - Selection, commands, camera controls
+- **T14** - Build placement, lattice foundation, power network
+- **T20** - Basic combat with health, weapons, enemies
+- **T30** - First lattice mission objective
+
+## Build & Deploy
+
+This project auto-deploys to SpeedrunGames.net on every push to main:
+
+1. Set `game.manifest.json` slug
+2. Build with Vite + TypeScript
+3. CI runs: typecheck, build, path lint, smoke test
+4. Push to main → auto-deploy portal PR
+
+## Originality Note
+
+Shard Dominion is not a clone of any existing RTS IP. Its unique identity is a living mineral planet where harvesting, power emissions, and construction increase Planet Agitation, causing the map to react with dynamic environmental events.
 
 ## Stack
 
@@ -45,41 +101,12 @@ See [AGENTS.md](AGENTS.md) for the full build playbook and API quick references.
 |---|---|
 | Language | TypeScript (strict) |
 | Bundler | Vite 5 |
-| Runtime | Node 22 (CI + Netlify) |
-| Host | Netlify (per-game site) |
-| Lint | Built-in path check (`scripts/check-relative-paths.mjs`) |
+| Runtime | Node 22 |
+| Rendering | Custom Canvas |
+| Game Loop | RequestAnimationFrame |
 
-## Layout
+## See Also
 
-```
-.
-├── src/
-│   ├── main.ts            # Entry — replace gameplay section
-│   ├── game.ts            # Canvas + rAF loop
-│   ├── speedrun.ts        # Timer, splits, formatTime
-│   ├── storage.ts         # PB persistence (CHANGE SLUG!)
-│   ├── ui.ts              # HUD overlay
-│   └── styles.css
-├── scripts/
-│   └── check-relative-paths.mjs
-├── .github/workflows/ci.yml
-├── index.html
-├── vite.config.ts          # base: "./" — required
-├── tsconfig.json
-└── netlify.toml
-```
-
-## Going plain-static (no bundler)
-
-Some games (Phaser, hand-rolled HTML+JS) don't need Vite. To switch:
-
-1. Move your `index.html` and assets to the repo root.
-2. In `netlify.toml`, comment out `command` and set `publish = "."`.
-3. Delete `src/`, `vite.config.ts`, `tsconfig.json`, and the build steps from CI.
-
-Keep all asset paths relative (`./foo.png`).
-
-## See also
-
-- Umbrella repo: [Brynrg/speedrungames](https://github.com/Brynrg/speedrungames)
-- Speedrungames playbook: [Brynrg/speedrungames/AGENTS.md](https://github.com/Brynrg/speedrungames/blob/main/AGENTS.md)
+- [AGENTS.md](AGENTS.md) - Full build playbook and API references
+- [docs/BUILD_LOG.md](docs/BUILD_LOG.md) - Implementation progress
+- [build_pkg_v2/](build_pkg_v2/) - Complete execution plan and specifications

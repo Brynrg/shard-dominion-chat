@@ -1,0 +1,61 @@
+import { UnitType } from '../core/types';
+
+export const enemyUnits: any[] = [
+    {
+        id: 'raider-1',
+        type: UnitType.RAIDER,
+        position: { x: 500, y: 500 },
+        targetPosition: null,
+        speed: 60,
+        carrying: 0,
+        maxCarrying: 0,
+        faction: 'raider',
+        isSelected: false,
+        visionRadius: 8,
+        hp: 80,
+        maxHp: 80,
+        isDead: false,
+        attackRange: 100,
+        attackDamage: 15,
+        attackCooldown: 1000,
+        lastAttackTime: 0
+    },
+    {
+        id: 'raider-2',
+        type: UnitType.RAIDER,
+        position: { x: 550, y: 550 },
+        targetPosition: null,
+        speed: 60,
+        carrying: 0,
+        maxCarrying: 0,
+        faction: 'raider',
+        isSelected: false,
+        visionRadius: 8,
+        hp: 80,
+        maxHp: 80,
+        isDead: false,
+        attackRange: 100,
+        attackDamage: 15,
+        attackCooldown: 1000,
+        lastAttackTime: 0
+    },
+    {
+        id: 'raider-3',
+        type: UnitType.RAIDER,
+        position: { x: 600, y: 500 },
+        targetPosition: null,
+        speed: 60,
+        carrying: 0,
+        maxCarrying: 0,
+        faction: 'raider',
+        isSelected: false,
+        visionRadius: 8,
+        hp: 80,
+        maxHp: 80,
+        isDead: false,
+        attackRange: 100,
+        attackDamage: 15,
+        attackCooldown: 1000,
+        lastAttackTime: 0
+    }
+];

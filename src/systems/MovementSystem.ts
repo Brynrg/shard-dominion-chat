@@ -1,33 +1,46 @@
 import { type Unit } from '../core/types';
 import { PathfindingSystem } from './PathfindingSystem';
+import { GameState } from '../core/GameState';
 
 export class MovementSystem {
-    private units: Map<string, Unit> = new Map();
     private pathfinding: PathfindingSystem = new PathfindingSystem();
-
-    addUnit(unit: Unit): void {
-        this.units.set(unit.id, { ...unit });
-    }
-
-    updateUnit(unitId: string, updates: Partial<Unit>): void {
-        const unit = this.units.get(unitId);
-        if (unit) {
-            Object.assign(unit, updates);
-            this.units.set(unitId, unit);
-        }
-    }
+    private planetAgitationSystem: any; // Will be set by GameScene
 
     setPathfinding(pathfinding: PathfindingSystem): void {
         this.pathfinding = pathfinding;
     }
 
-    moveUnits(deltaTime: number): void {
-        for (const [unitId, unit] of this.units) {
+    setPlanetAgitationSystem(system: any): void {
+        this.planetAgitationSystem = system;
+    }
+
+    moveUnits(units: Unit[], deltaTime: number): void {
+        const state = GameState.getInstance();
+        const moveQueue = state.getMoveQueue();
+
+        // Process queued moves first
+        for (const queueItem of moveQueue) {
+            const unit = units.find(u => u.id === queueItem.unitId);
+            if (unit && !unit.targetPosition) {
+                unit.targetPosition = queueItem.target;
+            }
+        }
+
+        // Clear processed queue items
+        state.clearMoveQueue();
+
+        // Move units
+        for (const unit of units) {
             if (unit.targetPosition) {
                 // Find path to target
                 const path = this.pathfinding.findPath(unit.position, unit.targetPosition);
 
                 if (path.length > 0) {
+                    // Move along the path - add movement agitation
+                    if (this.planetAgitationSystem) {
+                        this.planetAgitationSystem.addMovementAgitation();
+                    }
+
                     // Move along the path
                     const nextTile = path[0];
                     const dx = nextTile.x - unit.position.x;
@@ -40,9 +53,6 @@ export class MovementSystem {
 
                         unit.position.x += dx * ratio;
                         unit.position.y += dy * ratio;
-
-                        // Update the unit in the map
-                        this.units.set(unitId, unit);
                     } else {
                         // Reached next tile, move to next in path
                         path.shift();
@@ -50,27 +60,26 @@ export class MovementSystem {
                             const nextTile = path[0];
                             unit.position.x = nextTile.x;
                             unit.position.y = nextTile.y;
-                            this.units.set(unitId, unit);
                         } else {
                             // Reached target
                             unit.targetPosition = null;
-                            this.units.set(unitId, unit);
                         }
                     }
                 } else {
                     // No path found, stay at current position
                     unit.targetPosition = null;
-                    this.units.set(unitId, unit);
                 }
             }
         }
     }
 
     getUnits(): Unit[] {
-        return Array.from(this.units.values());
+        // This method is kept for compatibility but units are now managed externally
+        return [];
     }
 
-    getUnit(unitId: string): Unit | undefined {
-        return this.units.get(unitId);
+    getUnit(_unitId: string): Unit | undefined {
+        // This method is kept for compatibility but units are now managed externally
+        return undefined;
     }
 }

@@ -1,11 +1,12 @@
 import type { Tile } from '../core/types';
 import { TileType } from '../core/types';
 
-export const sampleTerrain: Tile[][] = [];
-
 // Generate a more complex grid
 const width = 30;
 const height = 20;
+
+// Initialize the terrain array
+const sampleTerrain: Tile[][] = [];
 
 for (let y = 0; y < height; y++) {
     sampleTerrain[y] = [];
@@ -77,3 +78,5 @@ for (let y = 0; y < height; y++) {
         };
     }
 }
+
+export { sampleTerrain };

@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Unit, Building, Tile } from './types';
+import type { Unit, Building, Tile, Position, Projectile, MissionState } from './types';
 import { TileType } from './types';
 
 export interface GameStateType {
@@ -27,6 +27,12 @@ export interface GameStateType {
         height: number;
         data: number[][];
     };
+    moveQueue: Array<{
+        unitId: string;
+        target: Position;
+    }>;
+    projectiles: Projectile[];
+    mission: MissionState | null;
 }
 
 export class GameState {
@@ -58,7 +64,10 @@ export class GameState {
                 width: 30,
                 height: 20,
                 data: []
-            }
+            },
+            moveQueue: [],
+            projectiles: [],
+            mission: null
         };
     }
 
@@ -130,8 +139,68 @@ export class GameState {
         this.state.selectedUnits = unitIds;
     }
 
+    addToMoveQueue(unitId: string, target: Position): void {
+        this.state.moveQueue.push({ unitId, target });
+    }
+
+    getMoveQueue(): Array<{ unitId: string; target: Position }> {
+        return this.state.moveQueue;
+    }
+
+    clearMoveQueue(): void {
+        this.state.moveQueue = [];
+    }
+
+    addProjectile(projectile: Projectile): void {
+        this.state.projectiles.push(projectile);
+    }
+
+    updateProjectiles(deltaTime: number): void {
+        const state = this.state;
+        const toRemove: string[] = [];
+
+        state.projectiles.forEach(projectile => {
+            if (projectile.isDead) {
+                toRemove.push(projectile.id);
+                return;
+            }
+
+            const dx = projectile.target.x - projectile.position.x;
+            const dy = projectile.target.y - projectile.position.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (dist < 5) {
+                projectile.isDead = true;
+                toRemove.push(projectile.id);
+            } else {
+                const speed = projectile.speed * deltaTime;
+                projectile.position.x += (dx / dist) * speed;
+                projectile.position.y += (dy / dist) * speed;
+            }
+        });
+
+        toRemove.forEach(id => {
+            const idx = state.projectiles.findIndex(p => p.id === id);
+            if (idx !== -1) {
+                state.projectiles.splice(idx, 1);
+            }
+        });
+    }
+
+    setMission(mission: MissionState | null): void {
+        this.state.mission = mission;
+    }
+
+    getMission(): MissionState | null {
+        return this.state.mission;
+    }
+
     getSelectedUnits(): GameStateType['units'] {
         return this.state.units.filter(unit => this.state.selectedUnits.includes(unit.id));
+    }
+
+    getSelectedUnitIds(): string[] {
+        return [...this.state.selectedUnits];
     }
 
     setCamera(x: number, y: number, zoom: number): void {

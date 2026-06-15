@@ -5,6 +5,9 @@ export class HarvestSystem {
     private tiles: Map<string, Tile> = new Map();
     private units: Map<string, Unit> = new Map();
     private processorPosition: Position = { x: 400, y: 300 }; // Default processor position
+    private totalCarriedCargo: number = 0;
+    private totalDepositedCargo: number = 0;
+    private planetAgitationSystem: any; // Will be set by GameScene
 
     setTile(x: number, y: number, tile: Tile): void {
         const key = `${x},${y}`;
@@ -23,10 +26,16 @@ export class HarvestSystem {
         this.processorPosition = position;
     }
 
+    setPlanetAgitationSystem(system: any): void {
+        this.planetAgitationSystem = system;
+    }
+
     updateUnits(): void {
+        this.totalCarriedCargo = 0; // Reset carried cargo counter
         for (const [unitId, unit] of this.units) {
             if (unit.type === UnitType.HARVESTER) {
                 this.updateHarvester(unitId, unit);
+                this.totalCarriedCargo += unit.carrying;
             }
         }
     }
@@ -37,8 +46,14 @@ export class HarvestSystem {
             const distance = this.getDistance(unit.position, this.processorPosition);
             if (distance < 30) { // Close enough to processor
                 // Deposit cargo
+                this.totalDepositedCargo += unit.carrying;
                 unit.carrying = 0;
                 this.units.set(unitId, unit);
+                
+                // Add harvest agitation when depositing
+                if (this.planetAgitationSystem) {
+                    this.planetAgitationSystem.addHarvestAgitation(2);
+                }
                 return;
             }
 
@@ -55,6 +70,11 @@ export class HarvestSystem {
                     unit.carrying = Math.min(unit.carrying + 10, unit.maxCarrying);
                     nearbyShardTile.hasShards = false;
                     this.tiles.set(`${nearbyShardTile.x},${nearbyShardTile.y}`, nearbyShardTile);
+                    
+                    // Add harvest agitation when collecting
+                    if (this.planetAgitationSystem) {
+                        this.planetAgitationSystem.addHarvestAgitation(0.5);
+                    }
                 } else {
                     // Move towards tile
                     this.moveToTarget(unit, nearbyShardTile);
@@ -114,13 +134,11 @@ export class HarvestSystem {
     }
 
     getTotalCarrying(): number {
-        let total = 0;
-        for (const unit of this.units.values()) {
-            if (unit.type === UnitType.HARVESTER) {
-                total += unit.carrying;
-            }
-        }
-        return total;
+        return this.totalCarriedCargo;
+    }
+
+    getTotalDeposited(): number {
+        return this.totalDepositedCargo;
     }
 
     getTiles(): Tile[] {

@@ -1,10 +1,12 @@
 import type { Action } from '../core/types';
 import { ActionType } from '../core/types';
+import { GameState } from '../core/GameState';
 
 export class InputSystem {
     private canvas: HTMLCanvasElement;
     private selectedUnits: Set<string> = new Set();
     private onAction: (action: Action) => void;
+    private shiftPressed: boolean = false;
 
     constructor(canvas: HTMLCanvasElement, onAction: (action: Action) => void) {
         this.canvas = canvas;
@@ -33,30 +35,105 @@ export class InputSystem {
             e.preventDefault();
         });
 
-        // Drag to select multiple units
+        // Track shift key for queueing
+        this.canvas.addEventListener('keydown', (e) => {
+            if (e.key === 'Shift') {
+                this.shiftPressed = true;
+            }
+        });
+
+        this.canvas.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') {
+                this.shiftPressed = false;
+            }
+        });
+
+        // Camera pan with WASD
+        this.canvas.addEventListener('keydown', (e) => {
+            if (['w', 'a', 's', 'd'].includes(e.key.toLowerCase())) {
+                const state = GameState.getInstance();
+                const camera = state.getCamera();
+                const panSpeed = 10;
+                switch (e.key.toLowerCase()) {
+                    case 'w':
+                        state.setCamera(camera.x, camera.y - panSpeed, camera.zoom);
+                        break;
+                    case 's':
+                        state.setCamera(camera.x, camera.y + panSpeed, camera.zoom);
+                        break;
+                    case 'a':
+                        state.setCamera(camera.x - panSpeed, camera.y, camera.zoom);
+                        break;
+                    case 'd':
+                        state.setCamera(camera.x + panSpeed, camera.y, camera.zoom);
+                        break;
+                }
+            }
+        });
+
+        // Camera pan with edge dragging
+        let isEdgeDragging = false;
+        let lastMouseX = 0;
+        let lastMouseY = 0;
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 1) { // Middle mouse button
+                isEdgeDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (isEdgeDragging) {
+                const dx = e.clientX - lastMouseX;
+                const dy = e.clientY - lastMouseY;
+                const state = GameState.getInstance();
+                const camera = state.getCamera();
+                state.setCamera(camera.x + dx, camera.y + dy, camera.zoom);
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+
+        this.canvas.addEventListener('mouseup', () => {
+            isEdgeDragging = false;
+        });
+
+        // Zoom with mouse wheel
+        this.canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const state = GameState.getInstance();
+            const camera = state.getCamera();
+            const zoomSpeed = 0.001;
+            const newZoom = Math.max(0.5, Math.min(3, camera.zoom - e.deltaY * zoomSpeed));
+            state.setCamera(camera.x, camera.y, newZoom);
+        }, { passive: false });
+
+        // Drag to select multiple units (no Shift required)
         let isDragging = false;
         let startX = 0;
         let startY = 0;
         let selectionBox: HTMLElement | null = null;
 
         this.canvas.addEventListener('pointerdown', (e) => {
-            if (e.button === 0 && e.shiftKey) { // Shift + left click for drag select
+            if (e.button === 0) { // Left click for drag select
                 isDragging = true;
                 startX = e.clientX;
                 startY = e.clientY;
-                
+
                 selectionBox = document.createElement('div');
                 selectionBox.style.position = 'absolute';
                 selectionBox.style.border = '2px dashed #4CAF50';
                 selectionBox.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
                 selectionBox.style.pointerEvents = 'none';
                 selectionBox.style.zIndex = '1000';
-                
+
                 selectionBox.style.left = startX + 'px';
                 selectionBox.style.top = startY + 'px';
                 selectionBox.style.width = '0px';
                 selectionBox.style.height = '0px';
-                
+
                 this.canvas.parentElement?.appendChild(selectionBox);
                 e.preventDefault();
             }
@@ -66,7 +143,7 @@ export class InputSystem {
             if (isDragging && selectionBox) {
                 const width = e.clientX - startX;
                 const height = e.clientY - startY;
-                
+
                 selectionBox.style.width = Math.abs(width) + 'px';
                 selectionBox.style.height = Math.abs(height) + 'px';
                 if (width < 0) selectionBox.style.left = e.clientX + 'px';
@@ -106,7 +183,19 @@ export class InputSystem {
             target: { x, y }
         };
 
+        // If Shift is pressed, add to move queue
+        if (this.shiftPressed && this.selectedUnits.size > 0) {
+            const state = GameState.getInstance();
+            this.selectedUnits.forEach(unitId => {
+                state.addToMoveQueue(unitId, { x, y });
+            });
+        }
+
         this.onAction(action);
+    }
+
+    isShiftPressed(): boolean {
+        return this.canvas.ownerDocument?.activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas; // This is a placeholder - we need to track shift key state
     }
 
     setSelectedUnits(unitIds: string[]): void {

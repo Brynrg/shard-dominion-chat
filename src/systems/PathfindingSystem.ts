@@ -1,4 +1,5 @@
 import { type Position, type Tile } from '../core/types';
+import { worldToTile, tileToWorldCenter } from '../core/coords';
 
 export class PathfindingSystem {
     private tiles: Tile[][] = [];
@@ -8,21 +9,16 @@ export class PathfindingSystem {
     }
 
     findPath(start: Position, end: Position): Position[] {
-        const startX = Math.floor(start.x);
-        const startY = Math.floor(start.y);
-        const endX = Math.floor(end.x);
-        const endY = Math.floor(end.y);
+        const startTile = worldToTile(start);
+        const endTile = worldToTile(end);
 
         // Check bounds
-        if (startX < 0 || startX >= this.tiles[0].length ||
-            startY < 0 || startY >= this.tiles.length ||
-            endX < 0 || endX >= this.tiles[0].length ||
-            endY < 0 || endY >= this.tiles.length) {
+        if (!this.isTileValid(startTile) || !this.isTileValid(endTile)) {
             return [];
         }
 
         // Check if end tile is blocked
-        if (this.tiles[endY][endX].isBlocked) {
+        if (this.tiles[endTile.y][endTile.x].isBlocked) {
             return [];
         }
 
@@ -33,11 +29,11 @@ export class PathfindingSystem {
         const gScore = new Map<string, number>();
         const fScore = new Map<string, number>();
 
-        const startKey = `${startX},${startY}`;
+        const startKey = `${startTile.x},${startTile.y}`;
 
         gScore.set(startKey, 0);
-        fScore.set(startKey, this.heuristic(startX, startY, endX, endY));
-        openSet.push({ x: startX, y: startY, f: fScore.get(startKey)!, g: 0 });
+        fScore.set(startKey, this.heuristic(startTile.x, startTile.y, endTile.x, endTile.y));
+        openSet.push({ x: startTile.x, y: startTile.y, f: fScore.get(startKey)!, g: 0 });
 
         while (openSet.length > 0) {
             // Get node with lowest f score
@@ -47,8 +43,10 @@ export class PathfindingSystem {
             const currentKey = `${current.x},${current.y}`;
 
             // Check if we reached the goal
-            if (current.x === endX && current.y === endY) {
-                return this.reconstructPath(cameFrom, current);
+            if (current.x === endTile.x && current.y === endTile.y) {
+                const path = this.reconstructPath(cameFrom, current);
+                // Convert tile positions back to world positions (center of tiles)
+                return path.map(tile => tileToWorldCenter(tile));
             }
 
             closedSet.add(currentKey);
@@ -67,7 +65,7 @@ export class PathfindingSystem {
                 if (!gScore.has(neighborKey) || tentativeG < gScore.get(neighborKey)!) {
                     cameFrom.set(neighborKey, current);
                     gScore.set(neighborKey, tentativeG);
-                    const f = tentativeG + this.heuristic(neighbor.x, neighbor.y, endX, endY);
+                    const f = tentativeG + this.heuristic(neighbor.x, neighbor.y, endTile.x, endTile.y);
                     fScore.set(neighborKey, f);
 
                     // Check if neighbor is already in open set
@@ -86,6 +84,11 @@ export class PathfindingSystem {
         return [];
     }
 
+    private isTileValid(tile: { x: number; y: number }): boolean {
+        return tile.x >= 0 && tile.x < this.tiles[0].length &&
+               tile.y >= 0 && tile.y < this.tiles.length;
+    }
+
     private getNeighbors(x: number, y: number): Position[] {
         const neighbors: Position[] = [];
         const directions = [
@@ -99,8 +102,7 @@ export class PathfindingSystem {
             const nx = x + dir.dx;
             const ny = y + dir.dy;
 
-            if (nx >= 0 && nx < this.tiles[0].length &&
-                ny >= 0 && ny < this.tiles.length &&
+            if (this.isTileValid({ x: nx, y: ny }) &&
                 !this.tiles[ny][nx].isBlocked) {
                 neighbors.push({ x: nx, y: ny });
             }
@@ -121,9 +123,10 @@ export class PathfindingSystem {
         const path: Position[] = [];
         let currentKey = `${current.x},${current.y}`;
 
+        path.unshift({ x: current.x, y: current.y });
         while (cameFrom.has(currentKey)) {
-            path.unshift({ x: current.x, y: current.y });
             const parent = cameFrom.get(currentKey)!;
+            path.unshift({ x: parent.x, y: parent.y });
             currentKey = `${parent.x},${parent.y}`;
         }
 
