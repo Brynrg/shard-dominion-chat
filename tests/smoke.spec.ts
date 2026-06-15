@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-const URL = "http://localhost:5173/";
+const URL = "http://localhost:4173/";
 
 // Required smoke per docs/browser-game-template-contract.md §4: the built game
 // must render a game-root element and log no console errors. This runs in CI
