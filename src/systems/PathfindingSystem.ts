@@ -85,6 +85,10 @@ export class PathfindingSystem {
     }
 
     private isTileValid(tile: { x: number; y: number }): boolean {
+        // Guard against undefined tiles array or empty array
+        if (!this.tiles || this.tiles.length === 0 || !this.tiles[0]) {
+            return false;
+        }
         return tile.x >= 0 && tile.x < this.tiles[0].length &&
                tile.y >= 0 && tile.y < this.tiles.length;
     }
