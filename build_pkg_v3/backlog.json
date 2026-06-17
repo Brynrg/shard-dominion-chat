@@ -1,0 +1,17 @@
+{
+  "project": "Shard Dominion",
+  "authoritative_plan_version": "3.0",
+  "current_phase": "P0",
+  "next_ticket": "P0-01",
+  "phase_exit_gates": {
+    "P0": "Visible controllable harvesting sandbox",
+    "P1": "15-25 minute First Lattice vertical slice",
+    "P2": "Complete standard RTS loop",
+    "P3": "Full Vanguard faction",
+    "P4": "Forge plus skirmish AI",
+    "P5": "Phantom plus full planet systems",
+    "P6": "Nine-mission campaign",
+    "P7": "Production polish",
+    "P8": "Release candidate"
+  }
+}
