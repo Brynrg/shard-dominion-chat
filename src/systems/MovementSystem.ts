@@ -3,11 +3,17 @@ import { PathfindingSystem } from './PathfindingSystem';
 import { GameState } from '../core/GameState';
 
 export class MovementSystem {
-    private pathfinding: PathfindingSystem = new PathfindingSystem();
+    private pathfinding: PathfindingSystem | null = null;
     private planetAgitationSystem: any; // Will be set by GameScene
 
     setPathfinding(pathfinding: PathfindingSystem): void {
         this.pathfinding = pathfinding;
+    }
+
+    setTiles(_tiles: any[][]): void {
+        if (this.pathfinding != null) {
+            this.pathfinding.setTiles(_tiles);
+        }
     }
 
     setPlanetAgitationSystem(system: any): void {
@@ -32,6 +38,13 @@ export class MovementSystem {
         // Move units
         for (const unit of units) {
             if (unit.targetPosition) {
+                // Use configured pathfinder
+                if (!this.pathfinding) {
+                    console.warn('MovementSystem: No pathfinder configured');
+                    unit.targetPosition = null;
+                    continue;
+                }
+
                 // Find path to target
                 const path = this.pathfinding.findPath(unit.position, unit.targetPosition);
 

@@ -78,6 +78,8 @@ class GameScene {
 
         // Initialize pathfinding system
         this.pathfindingSystem.setTiles(state.tiles);
+        this.movementSystem.setTiles(state.tiles);
+        this.movementSystem.setPathfinding(this.pathfindingSystem);
 
         // Initialize fog of war and minimap
         this.gameState.initializeFogOfWar();

@@ -1,6 +1,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Unit, Building, Tile, Position, Projectile, MissionState } from './types';
 import { TileType } from './types';
+import { worldToTile } from './coords';
 
 export interface GameStateType {
     units: Unit[];
@@ -231,8 +232,9 @@ export class GameState {
         // Mark tiles visible to each unit
         state.units.forEach(unit => {
             const visionRadius = unit.visionRadius;
-            const unitX = Math.floor(unit.position.x);
-            const unitY = Math.floor(unit.position.y);
+            const unitTile = worldToTile(unit.position);
+            const unitX = unitTile.x;
+            const unitY = unitTile.y;
 
             for (let dy = -visionRadius; dy <= visionRadius; dy++) {
                 for (let dx = -visionRadius; dx <= visionRadius; dx++) {
@@ -241,7 +243,7 @@ export class GameState {
 
                     if (checkX >= 0 && checkX < state.tiles[0].length &&
                         checkY >= 0 && checkY < state.tiles.length) {
-                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        const dist = Math.abs(dx) + Math.abs(dy);
                         if (dist <= visionRadius) {
                             const tile = state.tiles[checkY][checkX];
                             tile.isVisible = true;

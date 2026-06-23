@@ -1,5 +1,6 @@
 import type { Position, Unit, Tile } from '../core/types';
 import { UnitType, TileType } from '../core/types';
+import { tileToWorldCenter } from '../core/coords';
 
 export class HarvestSystem {
     private tiles: Map<string, Tile> = new Map();
@@ -99,7 +100,15 @@ export class HarvestSystem {
 
         for (const tile of this.tiles.values()) {
             if (tile.type === TileType.SHARD_FIELD && tile.hasShards) {
-                const distance = this.getDistance(position, tile);
+                // Convert tile position to world center
+                const worldPos = tileToWorldCenter({ x: tile.x, y: tile.y });
+                const distance = this.getDistance(position, worldPos);
+
+                // Check if tile is reachable (not blocked by ridges)
+                if (tile.isBlocked) {
+                    continue; // Skip blocked tiles (ridges)
+                }
+
                 if (distance < 100 && distance < minDistance) {
                     minDistance = distance;
                     closestTile = tile;
