@@ -1,0 +1,99 @@
+[
+  {
+    "id": "processor-1",
+    "type": "processor",
+    "position": { "x": 400, "y": 300 },
+    "bounds": { "x": 400, "y": 300, "width": 40, "height": 40 },
+    "power": 50,
+    "maxPower": 50,
+    "hp": 100,
+    "maxHp": 100,
+    "isPowered": true,
+    "isDead": false,
+    "cost": 100,
+    "powerConsumption": 50,
+    "prerequisites": []
+  },
+  {
+    "id": "command-center-1",
+    "type": "command_center",
+    "position": { "x": 100, "y": 100 },
+    "bounds": { "x": 100, "y": 100, "width": 60, "height": 60 },
+    "power": 100,
+    "maxPower": 100,
+    "hp": 200,
+    "maxHp": 200,
+    "isPowered": true,
+    "isDead": false,
+    "cost": 200,
+    "powerConsumption": 100,
+    "prerequisites": []
+  },
+  {
+    "id": "anchor-lattice-1",
+    "type": "anchor_lattice",
+    "position": { "x": 200, "y": 200 },
+    "bounds": { "x": 200, "y": 200, "width": 50, "height": 50 },
+    "power": 30,
+    "maxPower": 30,
+    "hp": 150,
+    "maxHp": 150,
+    "isPowered": true,
+    "isDead": false,
+    "cost": 50,
+    "powerConsumption": 0,
+    "prerequisites": []
+  },
+  {
+    "id": "power-node-1",
+    "type": "power_node",
+    "position": { "x": 300, "y": 300 },
+    "bounds": { "x": 300, "y": 300, "width": 40, "height": 40 },
+    "power": 50,
+    "maxPower": 50,
+    "hp": 100,
+    "maxHp": 100,
+    "isPowered": true,
+    "isDead": false,
+    "cost": 150,
+    "powerConsumption": 0,
+    "prerequisites": ["anchor_lattice"]
+  },
+  {
+      "id": "barracks-1",
+      "type": "barracks",
+      "position": { "x": 400, "y": 400 },
+      "bounds": { "x": 400, "y": 400, "width": 50, "height": 50 },
+      "power": 30,
+      "maxPower": 30,
+      "hp": 150,
+      "maxHp": 150,
+      "isPowered": true,
+      "isDead": false,
+      "cost": 180,
+      "powerConsumption": 40,
+      "prerequisites": ["anchor_lattice", "power_node"],
+      "production": {
+        "scout": { "buildTime": 10, "cost": 50, "powerCost": 5 },
+        "raider": { "buildTime": 15, "cost": 80, "powerCost": 8 }
+      }
+    },
+    {
+      "id": "factory-1",
+      "type": "factory",
+      "position": { "x": 500, "y": 500 },
+      "bounds": { "x": 500, "y": 500, "width": 60, "height": 60 },
+      "power": 50,
+      "maxPower": 50,
+      "hp": 200,
+      "maxHp": 200,
+      "isPowered": true,
+      "isDead": false,
+      "cost": 400,
+      "powerConsumption": 120,
+      "prerequisites": ["anchor_lattice", "power_node", "barracks"],
+      "production": {
+        "commander": { "buildTime": 30, "cost": 200, "powerCost": 20 }
+      }
+    }
+]

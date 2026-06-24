@@ -7,6 +7,10 @@ import { PathfindingSystem } from '../systems/PathfindingSystem';
 import { HarvestSystem } from '../systems/HarvestSystem';
 import { PlanetAgitationSystem } from '../systems/PlanetAgitationSystem';
 import { CombatSystem } from '../systems/CombatSystem';
+import { PowerSystem } from '../systems/PowerSystem';
+import { ConstructionSystem } from '../systems/ConstructionSystem';
+import { ProductionSystem } from '../systems/ProductionSystem';
+import { LatticeSystem } from '../systems/LatticeSystem';
 import { Hud } from '../ui/Hud';
 import { sampleBuildings } from '../data/sampleBuildings';
 import { sampleUnits } from '../data/sampleUnits';
@@ -19,10 +23,14 @@ class GameScene {
     private pathfindingSystem: PathfindingSystem;
     private harvestSystem: HarvestSystem;
     private _planetAgitationSystem: PlanetAgitationSystem;
-    
     private combatSystem: CombatSystem;
+    private powerSystem: PowerSystem;
+    private constructionSystem: ConstructionSystem;
+    private productionSystem: ProductionSystem;
+    private latticeSystem: LatticeSystem;
     private hud: Hud;
     private debugMode: boolean = false;
+    private inputSystem: InputSystem;
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -33,12 +41,17 @@ class GameScene {
             canvas.height = parent.clientHeight;
         }
         this.gameState = GameState.getInstance();
+        this.gameState.setCamera(canvas.width, canvas.height, 1);
         this.harvestSystem = new HarvestSystem();
         this._planetAgitationSystem = new PlanetAgitationSystem();
-        this.combatSystem = new CombatSystem(this.gameState.getState());
+        this.combatSystem = new CombatSystem(this.gameState);
+        this.powerSystem = new PowerSystem();
+        this.constructionSystem = new ConstructionSystem();
+        this.productionSystem = new ProductionSystem();
+        this.latticeSystem = new LatticeSystem();
+        this.inputSystem = new InputSystem(canvas, this.handleAction.bind(this));
 
         // Initialize systems
-        new InputSystem(canvas, this.handleAction.bind(this));
         this.movementSystem = new MovementSystem();
         this.movementSystem.setPlanetAgitationSystem(this._planetAgitationSystem);
         this.pathfindingSystem = new PathfindingSystem();
@@ -50,7 +63,7 @@ class GameScene {
     }
 
     private initializeGame(): void {
-        const state = this.gameState.getState();
+        const state = this.gameState;
 
         // Add sample data
         // Add buildings
@@ -103,6 +116,12 @@ class GameScene {
             case 'move':
                 this.handleMove(action.target);
                 break;
+            case 'place_building':
+                this.handlePlaceBuilding(action.buildingType);
+                break;
+            case 'add_to_production':
+                this.handleAddToProduction(action.buildingId, action.unitType, action.buildTime);
+                break;
         }
     }
 
@@ -120,32 +139,88 @@ class GameScene {
         }
     }
 
-    private handleSelection(target: Position): void {
+    private handlePlaceBuilding(buildingType: string): void {
         const state = this.gameState.getState();
+        const tile = this.worldToTile(state.camera);
+
+        // Use LatticeSystem for anchor lattice placement
+        if (buildingType === 'anchor_lattice') {
+            this.latticeSystem.setPlacementPreview(state, tile);
+            if (this.latticeSystem.placeLattice(state)) {
+                // Success - clear preview
+                this.latticeSystem.clearPlacementPreview();
+            }
+        } else {
+            // Use ConstructionSystem for other buildings
+            this.constructionSystem.setPlacementPreview(state, tile, buildingType);
+            if (this.constructionSystem.placeBuilding(state, buildingType)) {
+                // Success - clear preview
+                this.constructionSystem.clearPlacementPreview();
+            }
+        }
+    }
+
+    private handleAddToProduction(buildingId: string, unitType: string, rallyPoint: Position): void {
+        const state = this.gameState.getState();
+
+        if (this.productionSystem.addToQueue(state, buildingId, unitType, rallyPoint)) {
+            // Success
+        }
+    }
+
+    private worldToTile(pos: Position): { x: number; y: number } {
+        const tileSize = 32;
+        return {
+            x: Math.floor(pos.x / tileSize),
+            y: Math.floor(pos.y / tileSize)
+        };
+    }
+
+    private handleSelection(target: Position): void {
+        const state = this.gameState;
         const units = state.units;
-        
-        // Simple selection: select first unit near click
-        const selectedUnit = units.find(unit => {
+        const isShift = this.inputSystem.isShiftPressed();
+
+        // Find all units in selection box
+        const selectedUnits = units.filter(unit => {
             const dx = unit.position.x - target.x;
             const dy = unit.position.y - target.y;
             return Math.sqrt(dx * dx + dy * dy) < 30;
         });
 
-        if (selectedUnit) {
-            this.gameState.selectUnit(selectedUnit.id);
-            selectedUnit.isSelected = true;
-            units.forEach(unit => {
-                unit.isSelected = unit.id === selectedUnit.id;
-            });
+        if (selectedUnits.length > 0) {
+            if (isShift) {
+                // Toggle selection - add if not selected, remove if already selected
+                selectedUnits.forEach(unit => {
+                    const currentSelection = this.gameState.getSelectedUnitIds();
+                    if (currentSelection.includes(unit.id)) {
+                        // Remove from selection
+                        const newSelection = currentSelection.filter(id => id !== unit.id);
+                        this.gameState.selectUnits(newSelection);
+                        unit.isSelected = false;
+                    } else {
+                        // Add to selection
+                        const newSelection = [...currentSelection, unit.id];
+                        this.gameState.selectUnits(newSelection);
+                        unit.isSelected = true;
+                    }
+                });
+            } else {
+                // Single selection - clear all, then select these
+                units.forEach(unit => unit.isSelected = false);
+                const newSelection = selectedUnits.map(unit => unit.id);
+                this.gameState.selectUnits(newSelection);
+                selectedUnits.forEach(unit => unit.isSelected = true);
+            }
         } else {
-            // Clear selection
+            // Clicked on empty space - clear selection
             units.forEach(unit => unit.isSelected = false);
             this.gameState.selectUnits([]);
         }
     }
 
     gameLoop = () => {
-        const state = this.gameState.getState();
+        const state = this.gameState;
 
         // Fixed timestep (P0-06: bounded delta)
         const deltaTime = 16; // 60 FPS
@@ -153,32 +228,62 @@ class GameScene {
         // Update systems
         this.harvestSystem.updateUnits();
         this._planetAgitationSystem.update();
+        this.powerSystem.update(state);
+        this.constructionSystem.update(state);
+        this.latticeSystem.update(state);
+        this.productionSystem.update(deltaTime);
         this.combatSystem.autoAcquireTargets();
         this.combatSystem.updateUnits();
         this.combatSystem.updateProjectiles(deltaTime);
         this.combatSystem.checkUnitDeaths();
         this.combatSystem.checkBuildingDeaths();
 
+        // Apply power effects
+        const powerState = this.powerSystem.getState();
+        if (powerState.defenseShutdown) {
+            // Defense shutdown: disable combat
+            this.combatSystem.setEnabled(false);
+        } else {
+            this.combatSystem.setEnabled(true);
+        }
+
+        // Apply production slowdown
+        const radarElement = document.querySelector(".minimap-container") as HTMLElement;
+        // Radar interruption effect
+        if (radarElement) {
+            if (powerState.radarEnabled) {
+                radarElement.style.opacity = "1.0";
+                radarElement.style.filter = "none";
+            } else {
+                radarElement.style.opacity = "0.3";
+                radarElement.style.filter = "grayscale(100%) blur(2px)";
+            }
+        }
+        const productionSlowdown = powerState.productionSlowdown;
+        if (productionSlowdown > 0) {
+            // TODO: implement production slowdown
+        }
+
         // Update movement
-        this.movementSystem.moveUnits(state.units, deltaTime);
+        this.movementSystem.moveUnits(this.gameState.getState().units, deltaTime);
 
         // Update fog of war
         this.gameState.updateFogOfWar();
 
         // Update HUD (P0-05: real RTS status HUD)
-        this.hud.update(state);
+        this.hud.update(this.gameState.getState(), this.powerSystem.getState());
 
         // Debug overlay
         let debugInfo: any;
         if (this.debugMode) {
             debugInfo = {
-                units: state.units.length,
-                buildings: state.buildings.length,
-                credits: state.credits,
-                power: state.power,
+                units: this.gameState.getState().units.length,
+                buildings: this.gameState.getState().buildings.length,
+                credits: this.gameState.getState().credits,
+                power: this.gameState.getState().power,
                 agitation: this._planetAgitationSystem.getAgitationPercentage() + '%',
-                fogVisible: state.fogOfWar.visible.size,
-                fogExplored: state.fogOfWar.explored.size
+                fogVisible: this.gameState.getState().fogOfWar.visible.size,
+                fogExplored: this.gameState.getState().fogOfWar.explored.size
             };
             this.hud.setDebugInfo(debugInfo);
         }
@@ -200,7 +305,7 @@ class GameScene {
         ctx.fillRect(0, 0, width, height);
 
         // Get camera position
-        const state = this.gameState.getState();
+        const state = this.gameState;
         const camera = state.camera;
 
         // Save context and apply camera transform
@@ -234,7 +339,7 @@ class GameScene {
     }
 
     private renderTerrain(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-        const state = this.gameState.getState();
+        const state = this.gameState;
         const tileSize = 32;
         const cols = Math.ceil(width / tileSize);
         const rows = Math.ceil(height / tileSize);
@@ -288,7 +393,7 @@ class GameScene {
     }
 
     private renderBuildings(ctx: CanvasRenderingContext2D): void {
-        const state = this.gameState.getState();
+        const state = this.gameState;
 
         state.buildings.forEach(building => {
             ctx.fillStyle = building.type === BuildingType.COMMAND_CENTER ? '#4169e1' : '#228b22';
@@ -303,7 +408,7 @@ class GameScene {
     }
 
     private renderUnits(ctx: CanvasRenderingContext2D): void {
-        const state = this.gameState.getState();
+        const state = this.gameState;
 
         state.units.forEach(unit => {
             // Unit body
@@ -338,7 +443,7 @@ class GameScene {
     }
 
     private renderMoveMarkers(ctx: CanvasRenderingContext2D): void {
-        const state = this.gameState.getState();
+        const state = this.gameState;
         const selectedUnitIds = state.selectedUnits;
 
         // Draw move markers for selected units
@@ -373,7 +478,7 @@ class GameScene {
         }
 
         private renderFogOfWar(ctx: CanvasRenderingContext2D): void {
-            const state = this.gameState.getState();
+            const state = this.gameState;
             const tileSize = 32;
 
             state.tiles.forEach((row: any[], y: number) => {
@@ -392,7 +497,7 @@ class GameScene {
         }
 
         private renderMinimap(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-            const state = this.gameState.getState();
+            const state = this.gameState;
             const minimap = state.minimap;
             const minimapSize = 150;
             const minimapX = width - minimapSize - 10;

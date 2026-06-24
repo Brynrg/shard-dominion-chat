@@ -3,6 +3,7 @@ import type { Unit, Position, Projectile } from '../core/types';
 
 export class CombatSystem {
     private gameState: GameStateType;
+    private enabled: boolean = true;
 
     constructor(gameState: GameStateType) {
         this.gameState = gameState;
@@ -10,6 +11,10 @@ export class CombatSystem {
 
     setGameState(gameState: GameStateType): void {
         this.gameState = gameState;
+    }
+
+    setEnabled(enabled: boolean): void {
+        this.enabled = enabled;
     }
 
     // Attack command
@@ -67,6 +72,8 @@ export class CombatSystem {
 
     // Update units (attack cooldown, damage)
     updateUnits(): void {
+        if (!this.enabled) return;
+
         const state = this.gameState;
 
         state.units.forEach(unit => {
@@ -177,7 +184,8 @@ export class CombatSystem {
     // Check if any unit is dead
     checkUnitDeaths(): void {
         const state = this.gameState;
-        state.units = state.units.filter(unit => !unit.isDead);
+        const units = state.units.filter(unit => !unit.isDead);
+        this.gameState.setUnits(units);
     }
 
     // Check if any building is dead

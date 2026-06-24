@@ -3,6 +3,16 @@ import type { Unit, Building, Tile, Position, Projectile, MissionState } from '.
 import { TileType } from './types';
 import { worldToTile } from './coords';
 
+export interface ProductionQueueItem {
+    unitType: string;
+    unitId: string;
+    buildingId: string;
+    progress: number;
+    buildTime: number;
+    isComplete: boolean;
+    rallyPoint: Position;
+}
+
 export interface GameStateType {
     units: Unit[];
     buildings: Building[];
@@ -34,6 +44,14 @@ export interface GameStateType {
     }>;
     projectiles: Projectile[];
     mission: MissionState | null;
+    productionQueues: Array<ProductionQueueItem>;
+    setCredits(amount: number): void;
+    addCredits(amount: number): void;
+    setPower(amount: number, max?: number): void;
+    addPower(amount: number): void;
+    addUnit(unit: Unit): void;
+    addBuilding(building: Building): void;
+    setUnits(units: Unit[]): void;
 }
 
 export class GameState {
@@ -68,7 +86,20 @@ export class GameState {
             },
             moveQueue: [],
             projectiles: [],
-            mission: null
+            mission: null,
+            productionQueues: [],
+            setCredits: (amount: number) => { this.state.credits = amount; },
+            addCredits: (amount: number) => { this.state.credits += amount; },
+            setPower: (amount: number, max?: number) => {
+                this.state.power = amount;
+                if (max !== undefined) {
+                    this.state.maxPower = max;
+                }
+            },
+            addPower: (amount: number) => { this.state.power = Math.min(this.state.power + amount, this.state.maxPower); },
+            addUnit: (unit: Unit) => { this.state.units.push(unit); },
+            addBuilding: (building: Building) => { this.state.buildings.push(building); },
+            setUnits: (units: Unit[]) => { this.state.units = units; }
         };
     }
 
@@ -208,6 +239,10 @@ export class GameState {
         return [...this.state.selectedUnits];
     }
 
+    setUnits(units: GameStateType['units']): void {
+        this.state.units = units;
+    }
+
     setCamera(x: number, y: number, zoom: number): void {
         this.state.camera = { x, y, zoom };
     }
@@ -291,4 +326,36 @@ export class GameState {
             });
         });
     }
+
+    // Public properties for direct access
+    get units(): GameStateType['units'] { return this.state.units; }
+    get buildings(): GameStateType['buildings'] { return this.state.buildings; }
+    get tiles(): GameStateType['tiles'] { return this.state.tiles; }
+    get credits(): number { return this.state.credits; }
+    get power(): number { return this.state.power; }
+    get maxPower(): number { return this.state.maxPower; }
+    get planetAgitation(): number { return this.state.planetAgitation; }
+    get selectedUnits(): string[] { return this.state.selectedUnits; }
+    get camera(): GameStateType['camera'] { return this.state.camera; }
+    get fogOfWar(): GameStateType['fogOfWar'] { return this.state.fogOfWar; }
+    get minimap(): GameStateType['minimap'] { return this.state.minimap; }
+    get moveQueue(): GameStateType['moveQueue'] { return this.state.moveQueue; }
+    get projectiles(): GameStateType['projectiles'] { return this.state.projectiles; }
+    get mission(): GameStateType['mission'] { return this.state.mission; }
+    get productionQueues(): GameStateType['productionQueues'] { return this.state.productionQueues; }
+
+    // Setters
+    set credits(value: number) { this.state.credits = value; }
+    set power(value: number) { this.state.power = value; }
+    set maxPower(value: number) { this.state.maxPower = value; }
+    set planetAgitation(value: number) { this.state.planetAgitation = value; }
+    set selectedUnits(value: string[]) { this.state.selectedUnits = value; }
+    set camera(value: GameStateType['camera']) { this.state.camera = value; }
+    set fogOfWar(value: GameStateType['fogOfWar']) { this.state.fogOfWar = value; }
+    set minimap(value: GameStateType['minimap']) { this.state.minimap = value; }
+    set moveQueue(value: GameStateType['moveQueue']) { this.state.moveQueue = value; }
+    set projectiles(value: GameStateType['projectiles']) { this.state.projectiles = value; }
+    set mission(value: GameStateType['mission']) { this.state.mission = value; }
+    set productionQueues(value: GameStateType['productionQueues']) { this.state.productionQueues = value; }
+    set buildings(value: GameStateType['buildings']) { this.state.buildings = value; }
 }

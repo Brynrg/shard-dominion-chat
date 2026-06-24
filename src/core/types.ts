@@ -74,7 +74,9 @@ export enum BuildingType {
     TURRET = 'turret',
     RESEARCH_LAB = 'research_lab',
     TITAN_WORM = 'titan_worm',
-    VOLATILE_BLOOM = 'volatile_bloom'
+    VOLATILE_BLOOM = 'volatile_bloom',
+    BARRACKS = 'barracks',
+    FACTORY = 'factory'
 }
 
 export interface Building {
@@ -141,13 +143,19 @@ export interface MissionObjective {
 export enum ActionType {
     SELECT = 'select',
     MOVE = 'move',
-    HARVEST = 'harvest'
+    HARVEST = 'harvest',
+    PLACE_BUILDING = 'place_building',
+    ADD_TO_PRODUCTION = 'add_to_production'
 }
 
 export interface Action {
     type: ActionType;
     unitId?: string;
     target?: Position;
+    buildingType?: string;
+    buildingId?: string;
+    unitType?: string;
+    buildTime?: number;
 }
 
 export interface HarvestData {
@@ -178,4 +186,29 @@ export interface Projectile {
     damage: number;
     ownerFaction: string;
     isDead: boolean;
+}
+
+export interface Camera {
+    x: number;
+    y: number;
+    zoom: number;
+}
+
+export interface FogOfWar {
+    visible: Set<string>;
+    explored: Set<string>;
+}
+
+export interface Minimap {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    data: number[][];
+}
+
+export interface MoveQueueItem {
+    unitId: string;
+    target: Position;
+    path: Position[];
 }

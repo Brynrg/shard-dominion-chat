@@ -7,11 +7,19 @@ export class InputSystem {
     private selectedUnits: Set<string> = new Set();
     private onAction: (action: Action) => void;
     private shiftPressed: boolean = false;
+    private currentBuildingType: string | null = null;
+    private currentBuildingId: string | null = null;
+    private currentUnitType: string | null = null;
+    private currentBuildTime: number | null = null;
 
     constructor(canvas: HTMLCanvasElement, onAction: (action: Action) => void) {
         this.canvas = canvas;
         this.onAction = onAction;
         this.setupEventListeners();
+    }
+
+    isShiftPressed(): boolean {
+        return this.shiftPressed;
     }
 
     private setupEventListeners(): void {
@@ -39,6 +47,34 @@ export class InputSystem {
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') {
                 this.shiftPressed = true;
+            }
+            if (e.key === 'Escape') {
+                this.handleEscapeKey();
+            }
+            // Building placement shortcuts
+            if (e.key === '1') {
+                this.currentBuildingType = 'anchor_lattice';
+            }
+            if (e.key === '2') {
+                this.currentBuildingType = 'power_node';
+            }
+            if (e.key === '3') {
+                this.currentBuildingType = 'processor';
+            }
+            if (e.key === '4') {
+                this.currentBuildingType = 'barracks';
+            }
+            if (e.key === '5') {
+                this.currentBuildingType = 'factory';
+            }
+            // Production queue shortcuts
+            if (e.key === 'q') {
+                this.currentUnitType = 'scout';
+                this.currentBuildTime = 10;
+            }
+            if (e.key === 'w') {
+                this.currentUnitType = 'raider';
+                this.currentBuildTime = 15;
             }
         });
 
@@ -98,6 +134,46 @@ export class InputSystem {
 
         this.canvas.addEventListener('mouseup', () => {
             isEdgeDragging = false;
+        });
+
+        // Minimap click-pan
+        let isMinimapDragging = false;
+        let lastMinimapX = 0;
+        let lastMinimapY = 0;
+
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (e.button === 0) { // Left click for minimap
+                const state = GameState.getInstance();
+                const minimap = state.minimap;
+                const canvasRect = this.canvas.getBoundingClientRect();
+                const minimapX = canvasRect.width - minimap.width - 10;
+                const minimapY = 10;
+                const minimapSize = 150;
+
+                // Check if click is on minimap
+                if (e.clientX >= minimapX && e.clientX <= minimapX + minimapSize &&
+                    e.clientY >= minimapY && e.clientY <= minimapY + minimapSize) {
+                    isMinimapDragging = true;
+                    lastMinimapX = e.clientX;
+                    lastMinimapY = e.clientY;
+                }
+            }
+        });
+
+        this.canvas.addEventListener('mousemove', (e) => {
+            if (isMinimapDragging) {
+                const dx = e.clientX - lastMinimapX;
+                const dy = e.clientY - lastMinimapY;
+                const state = GameState.getInstance();
+                const camera = state.getCamera();
+                state.setCamera(camera.x + dx, camera.y + dy, camera.zoom);
+                lastMinimapX = e.clientX;
+                lastMinimapY = e.clientY;
+            }
+        });
+
+        this.canvas.addEventListener('mouseup', () => {
+            isMinimapDragging = false;
         });
 
         // Zoom with mouse wheel
@@ -165,12 +241,44 @@ export class InputSystem {
         const x = event.clientX - canvasRect.left;
         const y = event.clientY - canvasRect.top;
 
+        // Check if we're placing a building
+        if (this.currentBuildingType) {
+            const action: Action = {
+                type: ActionType.PLACE_BUILDING,
+                target: { x, y },
+                buildingType: this.currentBuildingType
+            };
+            this.onAction(action);
+            return;
+        }
+
+        // Check if we're adding to production queue
+        if (this.currentBuildingId && this.currentUnitType && this.currentBuildTime) {
+            const action: Action = {
+                type: ActionType.ADD_TO_PRODUCTION,
+                target: { x, y },
+                buildingId: this.currentBuildingId,
+                unitType: this.currentUnitType,
+                buildTime: this.currentBuildTime
+            };
+            this.onAction(action);
+            return;
+        }
+
+        // Default: select units
         const action: Action = {
             type: ActionType.SELECT,
             target: { x, y }
         };
 
         this.onAction(action);
+    }
+
+    private handleEscapeKey(): void {
+        // Clear selection on Escape
+        this.selectedUnits.clear();
+        const state = GameState.getInstance();
+        state.selectUnits([]);
     }
 
     private handleRightClick(event: PointerEvent): void {
@@ -192,10 +300,6 @@ export class InputSystem {
         }
 
         this.onAction(action);
-    }
-
-    isShiftPressed(): boolean {
-        return this.canvas.ownerDocument?.activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas; // This is a placeholder - we need to track shift key state
     }
 
     setSelectedUnits(unitIds: string[]): void {

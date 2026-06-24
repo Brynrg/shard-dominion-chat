@@ -1,6 +1,7 @@
 import { UnitType } from '../core/types';
+import type { Unit } from '../core/types';
 
-export const sampleUnits: any[] = [
+export const sampleUnits: Unit[] = [
     {
         id: 'harvester-1',
         type: UnitType.HARVESTER,
