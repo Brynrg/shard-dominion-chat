@@ -8,7 +8,7 @@ export const sampleUnits: any[] = [
         targetPosition: null,
         speed: 50,
         carrying: 0,
-        maxCarrying: 100,
+        maxCarrying: 50,
         faction: 'vanguard',
         isSelected: false,
         visionRadius: 5,

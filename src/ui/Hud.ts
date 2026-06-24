@@ -1,4 +1,6 @@
-import type { GameState } from '../core/types';
+import type { GameStateType } from '../core/GameState';
+import { UnitType } from '../core/types';
+import type { Unit } from '../core/types';
 
 export class Hud {
     private root: HTMLElement;
@@ -27,6 +29,14 @@ export class Hud {
         hudContainer.style.fontFamily = 'system-ui, sans-serif';
         hudContainer.style.zIndex = '1000';
 
+        // RTS Status Header
+        const statusHeader = document.createElement('div');
+        statusHeader.innerHTML = '<strong>SHARD DOMINION</strong>';
+        statusHeader.style.marginBottom = '8px';
+        statusHeader.style.borderBottom = '1px solid #444';
+        statusHeader.style.paddingBottom = '5px';
+        hudContainer.appendChild(statusHeader);
+
         // Credits
         const creditsRow = document.createElement('div');
         creditsRow.innerHTML = 'Credits: <span id="credits">100</span>';
@@ -41,6 +51,11 @@ export class Hud {
         const agitationRow = document.createElement('div');
         agitationRow.innerHTML = 'Agitation: <span id="agitation">0</span>%';
         hudContainer.appendChild(agitationRow);
+
+        // Harvester Status
+        const harvesterRow = document.createElement('div');
+        harvesterRow.innerHTML = 'Harvesters: <span id="harvesters">0</span>';
+        hudContainer.appendChild(harvesterRow);
 
         // Debug overlay toggle
         const debugToggle = document.createElement('div');
@@ -58,7 +73,7 @@ export class Hud {
         this.planetAgitationElement = document.getElementById('agitation');
     }
 
-    update(state: GameState): void {
+    update(state: GameStateType): void {
         // Update credits
         if (this.creditsElement) {
             this.creditsElement.textContent = state.credits.toString();
@@ -77,6 +92,13 @@ export class Hud {
         if (this.planetAgitationElement) {
             const aggPercentage = Math.round((state.planetAgitation / 100) * 100);
             this.planetAgitationElement.textContent = aggPercentage.toString();
+        }
+
+        // Update harvester count
+        const harvesterElement = document.getElementById('harvesters');
+        if (harvesterElement) {
+            const harvesterCount = state.units.filter((u: Unit) => u.type === UnitType.HARVESTER).length;
+            harvesterElement.textContent = harvesterCount.toString();
         }
     }
 

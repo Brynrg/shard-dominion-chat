@@ -1,6 +1,6 @@
 import { GameState } from '../core/GameState';
 import type { Position } from '../core/types';
-import { TileType } from '../core/types';
+import { TileType, UnitType, BuildingType } from '../core/types';
 import { InputSystem } from '../systems/InputSystem';
 import { MovementSystem } from '../systems/MovementSystem';
 import { PathfindingSystem } from '../systems/PathfindingSystem';
@@ -146,26 +146,26 @@ class GameScene {
 
     gameLoop = () => {
         const state = this.gameState.getState();
-        
+
+        // Fixed timestep (P0-06: bounded delta)
+        const deltaTime = 16; // 60 FPS
+
         // Update systems
         this.harvestSystem.updateUnits();
         this._planetAgitationSystem.update();
         this.combatSystem.autoAcquireTargets();
         this.combatSystem.updateUnits();
-        this.combatSystem.updateProjectiles(16);
+        this.combatSystem.updateProjectiles(deltaTime);
         this.combatSystem.checkUnitDeaths();
         this.combatSystem.checkBuildingDeaths();
 
         // Update movement
-        this.movementSystem.moveUnits(state.units, 16);
+        this.movementSystem.moveUnits(state.units, deltaTime);
 
         // Update fog of war
         this.gameState.updateFogOfWar();
 
-        // Update HUD
-        const totalDeposited = this.harvestSystem.getTotalDeposited();
-        this.gameState.setCredits(100 + Math.floor(totalDeposited / 10));
-        this.gameState.setPlanetAgitation(this._planetAgitationSystem.getCurrentAgitation());
+        // Update HUD (P0-05: real RTS status HUD)
         this.hud.update(state);
 
         // Debug overlay
@@ -291,7 +291,7 @@ class GameScene {
         const state = this.gameState.getState();
 
         state.buildings.forEach(building => {
-            ctx.fillStyle = building.type === 'processor' ? '#4169e1' : '#228b22';
+            ctx.fillStyle = building.type === BuildingType.COMMAND_CENTER ? '#4169e1' : '#228b22';
             ctx.fillRect(building.position.x, building.position.y, 40, 40);
 
             // Building label
@@ -322,7 +322,7 @@ class GameScene {
             }
 
             // Harvester cargo indicator
-            if (unit.type === 'harvester' && unit.carrying > 0) {
+            if (unit.type === UnitType.HARVESTER && unit.carrying > 0) {
                 ctx.fillStyle = '#ffd700';
                 const cargoPercent = unit.carrying / unit.maxCarrying;
                 ctx.fillRect(unit.position.x - 8, unit.position.y - 20, 16 * cargoPercent, 4);
@@ -332,7 +332,7 @@ class GameScene {
             ctx.fillStyle = 'white';
             ctx.font = '10px system-ui';
             ctx.textAlign = 'center';
-            const typeLabel = unit.type === 'harvester' ? 'H' : 'U';
+            const typeLabel = unit.type === UnitType.HARVESTER ? 'H' : 'U';
             ctx.fillText(typeLabel, unit.position.x, unit.position.y + 20);
         });
     }

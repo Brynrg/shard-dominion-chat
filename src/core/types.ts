@@ -29,6 +29,7 @@ export interface Tile {
     y: number;
     cost: number;
     hasShards: boolean;
+    shardAmount: number;
     agitation: number;
     isBlocked: boolean;
     wormRisk: number;

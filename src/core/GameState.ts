@@ -113,6 +113,10 @@ export class GameState {
         this.state.credits += amount;
     }
 
+    addCreditsOnDeposit(amount: number): void {
+        this.state.credits += amount;
+    }
+
     setPower(amount: number, max?: number): void {
         this.state.power = amount;
         if (max !== undefined) {

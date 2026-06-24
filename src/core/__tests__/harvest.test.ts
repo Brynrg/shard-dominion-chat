@@ -244,8 +244,9 @@ describe('HarvestSystem', () => {
 
       harvestSystem.addUnit(harvester);
 
-      // Update units
-      harvestSystem.updateUnits();
+      // Advance time to allow harvester to move to processor
+      const deltaTime = 2000; // 2 seconds
+      harvestSystem.updateUnits(deltaTime);
 
       // Harvester should have moved towards processor
       expect(harvester.carrying).toBe(50);
@@ -259,6 +260,7 @@ describe('HarvestSystem', () => {
         y: 10,
         cost: 1,
         hasShards: true,
+        shardAmount: 50, // P0-04: finite shard amounts
         agitation: 0,
         isBlocked: false,
         wormRisk: 0,
@@ -269,11 +271,12 @@ describe('HarvestSystem', () => {
       harvestSystem.setTile(10, 10, shardTile);
       harvestSystem.setProcessorPosition({ x: 400, y: 300 });
 
-      // Create a harvester at world position (400, 300)
+      // Create a harvester at a position closer to the shard tile
+      // Shard tile world position: (336, 336)
       const harvester: any = {
         id: 'harvester-1',
         type: 'harvester',
-        position: { x: 400, y: 300 },
+        position: { x: 336, y: 336 }, // Start at the shard tile
         targetPosition: null,
         speed: 50,
         carrying: 0,
@@ -292,10 +295,12 @@ describe('HarvestSystem', () => {
 
       harvestSystem.addUnit(harvester);
 
-      // Update units
-      harvestSystem.updateUnits();
+      // Advance time to allow harvester to move to shard
+      // Harvester speed: 50 pixels/sec, distance: ~100 pixels, time needed: ~2 seconds
+      const deltaTime = 2000; // 2 seconds
+      harvestSystem.updateUnits(deltaTime);
 
-      // Harvester should have moved towards shard and started harvesting
+      // Verify harvester moved and started harvesting
       expect(harvester.carrying).toBeGreaterThan(0);
     });
   });

@@ -40,7 +40,6 @@ export class MovementSystem {
             if (unit.targetPosition) {
                 // Use configured pathfinder
                 if (!this.pathfinding) {
-                    console.warn('MovementSystem: No pathfinder configured');
                     unit.targetPosition = null;
                     continue;
                 }
