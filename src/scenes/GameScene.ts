@@ -41,7 +41,8 @@ class GameScene {
             canvas.height = parent.clientHeight;
         }
         this.gameState = GameState.getInstance();
-        this.gameState.setCamera(canvas.width, canvas.height, 1);
+        // Center the camera on the map (30x20 tiles @ 32px each = 960x640)
+        this.gameState.setCamera(-480, -320, 1);
         this.harvestSystem = new HarvestSystem();
         this._planetAgitationSystem = new PlanetAgitationSystem();
         this.combatSystem = new CombatSystem(this.gameState);
