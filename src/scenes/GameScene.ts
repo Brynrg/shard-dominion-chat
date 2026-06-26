@@ -84,20 +84,13 @@ class GameScene {
             }
         });
     }
-    { handleAction(action: any): void {
+private handleAction(action: any): void {
         try {
-            const { DataLoader } = await import("../data/DataLoader");
-            
-            // Load buildings
-            const buildingsData = await DataLoader.loadBuildings();
-            buildingsData.forEach(building => {
-                this.gameState.addBuilding(building);
-            });
-
-            // Load units
-            const unitsData = await DataLoader.loadUnits();
-            unitsData.forEach(unit => {
-                this.gameState.addUnit(unit);
+                this.harvestSystem.addUnit(unit);
+                // Simple fallback - just add some units
+            const sampleUnits = require("../data/sampleUnits");
+            sampleUnits.forEach((unit: any) => {
+        }
                 this.harvestSystem.addUnit(unit);
             });
         } catch (error) {
