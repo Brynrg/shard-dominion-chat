@@ -84,13 +84,12 @@ class GameScene {
             }
         });
     }
-private handleAction(action: any): void {
+
+    private handleAction(action: any): void {
         try {
-                this.harvestSystem.addUnit(unit);
-                // Simple fallback - just add some units
+            // Load game data (this would be from DataLoader in a full implementation)
             const sampleUnits = require("../data/sampleUnits");
             sampleUnits.forEach((unit: any) => {
-        }
                 this.harvestSystem.addUnit(unit);
             });
         } catch (error) {
@@ -108,20 +107,19 @@ private handleAction(action: any): void {
 
         // Add units
         sampleUnits.forEach(unit => {
-            this.gameState.addUnit(unit);
-            this.harvestSystem.addUnit(unit);
-        });
-    }        switch (action.type) {
-            case 'select':
-                this.handleSelection(action.target);
-                break;
-            case 'move':
-                this.handleMove(action.target);
-                break;
-        }
-    }
 
-    private handleMove(target: Position): void {
+            private handleAction(action: any): void {
+            switch (action.type) {
+                case 'select':
+                    this.handleSelection(action.target);
+                    break;
+                case 'move':
+                    this.handleMove(action.target);
+                    break;
+            }
+            }
+
+            private handleMove(target: Position): void {
         const state = this.gameState.getState();
         const selectedUnits = state.selectedUnits;
 

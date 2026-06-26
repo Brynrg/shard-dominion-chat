@@ -12,6 +12,9 @@ export interface Buildable {
     maxHp: number;
     footprint: { width: number; height: number };
     buildRadius: number;
+    description?: string;
+    tier?: 'standard' | 'reinforced';
+    commandRadius?: number;
 }
 
 export class BuildPlacementSystem {
@@ -70,7 +73,24 @@ export class BuildPlacementSystem {
                 hp: 200,
                 maxHp: 200,
                 footprint: { width: 2, height: 2 },
-                buildRadius: 100
+                buildRadius: 100,
+                description: 'Expands command radius and enables advanced building placement',
+                tier: 'standard',
+                commandRadius: 150
+            },
+            {
+                type: BuildingType.ANCHOR_LATTICE,
+                name: 'Anchor Lattice (Reinforced)',
+                cost: 150,
+                power: 0,
+                maxPower: 0,
+                hp: 300,
+                maxHp: 300,
+                footprint: { width: 2, height: 2 },
+                buildRadius: 150,
+                description: 'Enhanced anchor lattice with larger command radius',
+                tier: 'reinforced',
+                commandRadius: 200
             },
             {
                 type: BuildingType.POWER_NODE,
@@ -81,7 +101,9 @@ export class BuildPlacementSystem {
                 hp: 100,
                 maxHp: 100,
                 footprint: { width: 1, height: 1 },
-                buildRadius: 100
+                buildRadius: 100,
+                description: 'Generates power for other buildings',
+                tier: 'standard'
             },
             {
                 type: BuildingType.FORGE,
@@ -92,7 +114,9 @@ export class BuildPlacementSystem {
                 hp: 150,
                 maxHp: 150,
                 footprint: { width: 1, height: 1 },
-                buildRadius: 100
+                buildRadius: 100,
+                description: 'Produces military units',
+                tier: 'standard'
             },
             {
                 type: BuildingType.TURRET,
@@ -103,7 +127,9 @@ export class BuildPlacementSystem {
                 hp: 80,
                 maxHp: 80,
                 footprint: { width: 1, height: 1 },
-                buildRadius: 100
+                buildRadius: 100,
+                description: 'Automatically attacks nearby enemies',
+                tier: 'standard'
             }
         ];
     }
@@ -222,5 +248,159 @@ export class BuildPlacementSystem {
             b => b.type === buildType && b.position.x === position.x && b.position.y === position.y
         );
         return build ? build.progress : 0;
+    }
+
+    // P1-04: Anchor Lattice features
+    getCommandRadius(): number {
+        const commandCenter = this.gameState.buildings.find(
+            b => b.type === BuildingType.COMMAND_CENTER
+        );
+        if (!commandCenter) return 100;
+
+        let maxRadius = 100;
+        this.gameState.buildings.forEach(building => {
+            if (building.type === BuildingType.ANCHOR_LATTICE) {
+                const buildable = this.getBuildables().find(b => b.type === building.type);
+                if (buildable && buildable.commandRadius) {
+                    maxRadius = Math.max(maxRadius, buildable.commandRadius);
+                }
+            }
+        });
+        return maxRadius;
+    }
+
+    getBuildingTier(buildType: BuildingType): 'standard' | 'reinforced' {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.tier || 'standard';
+    }
+
+    getBuildableByType(buildType: BuildingType): Buildable | undefined {
+        return this.getBuildables().find(b => b.type === buildType);
+    }
+
+    getBuildableCost(buildType: BuildingType): number {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.cost || 0;
+    }
+
+    getBuildablePower(buildType: BuildingType): number {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.power || 0;
+    }
+
+    getBuildableHp(buildType: BuildingType): number {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.hp || 100;
+    }
+
+    getBuildableMaxHp(buildType: BuildingType): number {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.maxHp || 100;
+    }
+
+    getBuildableDescription(buildType: BuildingType): string {
+        const buildable = this.getBuildables().find(b => b.type === buildType);
+        return buildable?.description || '';
+    }
+
+    // Check if position is within command radius
+    isWithinCommandRadius(position: Position): boolean {
+        const commandCenter = this.gameState.buildings.find(
+            b => b.type === BuildingType.COMMAND_CENTER
+        );
+        if (!commandCenter) return false;
+
+        const dx = position.x - commandCenter.position.x;
+        const dy = position.y - commandCenter.position.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        return dist <= this.getCommandRadius();
+    }
+
+    // Get all valid positions for building placement
+    getValidPositions(buildType: BuildingType): Position[] {
+        const validPositions: Position[] = [];
+        const buildable = this.getBuildableByType(buildType);
+        if (!buildable) return validPositions;
+
+        // Check all positions within command radius
+        for (let y = 0; y < this.gameState.tiles.length; y++) {
+            for (let x = 0; x < this.gameState.tiles[0].length; x++) {
+                const position = { x: x * 32, y: y * 32 };
+                
+                if (this.canBuild(buildType, position)) {
+                    validPositions.push(position);
+                }
+            }
+        }
+        return validPositions;
+    }
+
+    // Get placement preview info
+    getPlacementPreview(buildType: BuildingType, position: Position): {
+        isValid: boolean;
+        cost: number;
+        power: number;
+        hp: number;
+        description: string;
+        tier: 'standard' | 'reinforced';
+        commandRadius: number;
+        reasons: string[];
+    } {
+        const buildable = this.getBuildableByType(buildType);
+        if (!buildable) {
+            return {
+                isValid: false,
+                cost: 0,
+                power: 0,
+                hp: 0,
+                description: '',
+                tier: 'standard',
+                commandRadius: 0,
+                reasons: ['Invalid building type']
+            };
+        }
+
+        const reasons: string[] = [];
+        
+        // Check credits
+        if (this.gameState.credits < buildable.cost) {
+            reasons.push(`Not enough credits: ${this.gameState.credits}/${buildable.cost}`);
+        }
+
+        // Check power
+        if (this.gameState.power < buildable.power) {
+            reasons.push(`Not enough power: ${this.gameState.power}/${buildable.power}`);
+        }
+
+        // Check command radius
+        if (!this.isWithinCommandRadius(position)) {
+            reasons.push(`Outside command radius (${this.getCommandRadius()}px)`);
+        }
+
+        // Check footprint
+        for (let y = 0; y < buildable.footprint.height; y++) {
+            for (let x = 0; x < buildable.footprint.width; x++) {
+                const checkX = Math.floor(position.x) + x;
+                const checkY = Math.floor(position.y) + y;
+
+                const tile = this.gameState.tiles[checkY]?.[checkX];
+                if (!tile || tile.isBlocked) {
+                    reasons.push(`Position blocked at (${checkX}, ${checkY})`);
+                    break;
+                }
+            }
+        }
+
+        return {
+            isValid: reasons.length === 0,
+            cost: buildable.cost,
+            power: buildable.power,
+            hp: buildable.hp,
+            description: buildable.description || '',
+            tier: buildable.tier || 'standard',
+            commandRadius: buildable.commandRadius || 0,
+            reasons
+        };
     }
 }
