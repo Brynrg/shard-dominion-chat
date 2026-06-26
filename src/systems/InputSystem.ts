@@ -35,6 +35,16 @@ export class InputSystem {
             e.preventDefault();
         });
 
+        // ESC key to clear selection
+        this.canvas.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const state = GameState.getInstance();
+                state.selectUnits([]);
+                const allUnits = state.getState().units;
+                allUnits.forEach(unit => unit.isSelected = false);
+            }
+        });
+
         // Track shift key for queueing
         this.canvas.addEventListener('keydown', (e) => {
             if (e.key === 'Shift') {
@@ -158,6 +168,11 @@ export class InputSystem {
                 selectionBox = null;
             }
         });
+
+        // Add click handler for minimap panning
+        this.canvas.addEventListener('click', (e) => {
+            this.handleMinimapClick(e);
+        });
     }
 
     private handleLeftClick(event: PointerEvent): void {
@@ -195,7 +210,38 @@ export class InputSystem {
     }
 
     isShiftPressed(): boolean {
-        return this.canvas.ownerDocument?.activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas && (this.canvas.ownerDocument as any).activeElement === this.canvas; // This is a placeholder - we need to track shift key state
+        return this.shiftPressed;
+    }
+
+    private handleMinimapClick(event: PointerEvent): void {
+        const canvasRect = this.canvas.getBoundingClientRect();
+        const x = event.clientX - canvasRect.left;
+        const y = event.clientY - canvasRect.top;
+        
+        const state = GameState.getInstance();
+        const camera = state.getCamera();
+        const minimap = state.getState().minimap;
+        
+        // Calculate minimap position
+        const minimapSize = 150;
+        const minimapX = canvasRect.width - minimapSize - 10;
+        const minimapY = 10;
+        
+        // Check if click is within minimap bounds
+        if (x >= minimapX && x <= minimapX + minimapSize && 
+            y >= minimapY && y <= minimapY + minimapSize) {
+            
+            // Convert minimap click to world coordinates
+            const clickX = (x - minimapX) / minimapSize * minimap.width;
+            const clickY = (y - minimapY) / minimapSize * minimap.height;
+            
+            // Convert to world coordinates (assuming map size and camera zoom)
+            const worldX = clickX * 32; // Each tile is 32px
+            const worldY = clickY * 32;
+            
+            // Center camera on clicked minimap position
+            state.setCamera(worldX, worldY, camera.zoom);
+        }
     }
 
     setSelectedUnits(unitIds: string[]): void {

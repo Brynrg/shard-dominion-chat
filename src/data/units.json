@@ -1,0 +1,23 @@
+{
+  "units": [
+    {
+      "id": "harvester-1",
+      "type": "harvester",
+      "position": { "x": 200, "y": 200 },
+      "targetPosition": null,
+      "speed": 50,
+      "carrying": 0,
+      "maxCarrying": 100,
+      "faction": "vanguard",
+      "isSelected": false,
+      "visionRadius": 5,
+      "hp": 100,
+      "maxHp": 100,
+      "isDead": false,
+      "attackRange": 0,
+      "attackDamage": 0,
+      "attackCooldown": 0,
+      "lastAttackTime": 0
+    }
+  ]
+}

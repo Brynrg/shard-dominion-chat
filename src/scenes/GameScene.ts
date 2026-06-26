@@ -19,10 +19,10 @@ class GameScene {
     private pathfindingSystem: PathfindingSystem;
     private harvestSystem: HarvestSystem;
     private _planetAgitationSystem: PlanetAgitationSystem;
-    
     private combatSystem: CombatSystem;
     private hud: Hud;
     private debugMode: boolean = false;
+    private inputSystem: any; // Reference to InputSystem
 
     constructor(canvas: HTMLCanvasElement) {
         this.canvas = canvas;
@@ -38,7 +38,7 @@ class GameScene {
         this.combatSystem = new CombatSystem(this.gameState.getState());
 
         // Initialize systems
-        new InputSystem(canvas, this.handleAction.bind(this));
+        this.inputSystem = new InputSystem(canvas, this.handleAction.bind(this));
         this.movementSystem = new MovementSystem();
         this.movementSystem.setPlanetAgitationSystem(this._planetAgitationSystem);
         this.pathfindingSystem = new PathfindingSystem();
@@ -52,17 +52,8 @@ class GameScene {
     private initializeGame(): void {
         const state = this.gameState.getState();
 
-        // Add sample data
-        // Add buildings
-        sampleBuildings.forEach(building => {
-            this.gameState.addBuilding(building);
-        });
-
-        // Add units
-        sampleUnits.forEach(unit => {
-            this.gameState.addUnit(unit);
-            this.harvestSystem.addUnit(unit);
-        });
+        // Add sample data using loader
+        this.loadGameData();
 
         // Add terrain
         sampleTerrain.forEach((row: any[], y: number) => {
@@ -93,9 +84,41 @@ class GameScene {
             }
         });
     }
+    { handleAction(action: any): void {
+        try {
+            const { DataLoader } = await import("../data/DataLoader");
+            
+            // Load buildings
+            const buildingsData = await DataLoader.loadBuildings();
+            buildingsData.forEach(building => {
+                this.gameState.addBuilding(building);
+            });
 
-    private handleAction(action: any): void {
-        switch (action.type) {
+            // Load units
+            const unitsData = await DataLoader.loadUnits();
+            unitsData.forEach(unit => {
+                this.gameState.addUnit(unit);
+                this.harvestSystem.addUnit(unit);
+            });
+        } catch (error) {
+            console.error("Failed to load game data:", error);
+            // Fall back to hardcoded data
+            this.loadFallbackData();
+        }
+    }
+
+    private loadFallbackData(): void {
+        // Add buildings
+        sampleBuildings.forEach(building => {
+            this.gameState.addBuilding(building);
+        });
+
+        // Add units
+        sampleUnits.forEach(unit => {
+            this.gameState.addUnit(unit);
+            this.harvestSystem.addUnit(unit);
+        });
+    }        switch (action.type) {
             case 'select':
                 this.handleSelection(action.target);
                 break;
@@ -123,7 +146,8 @@ class GameScene {
         const state = this.gameState.getState();
         const units = state.units;
         
-        // Simple selection: select first unit near click
+        // Check if we're doing drag selection by checking if there's an active drag box
+        // For now, let's implement simple click selection and we'll enhance it with drag detection later
         const selectedUnit = units.find(unit => {
             const dx = unit.position.x - target.x;
             const dy = unit.position.y - target.y;
@@ -131,13 +155,27 @@ class GameScene {
         });
 
         if (selectedUnit) {
-            this.gameState.selectUnit(selectedUnit.id);
+            // Check shift key for add/remove
+            if (this.inputSystem?.isShiftPressed()) {
+                // Toggle selection
+                const currentlySelected = state.selectedUnits.includes(selectedUnit.id);
+                if (currentlySelected) {
+                    // Remove from selection
+                    const newSelection = state.selectedUnits.filter(id => id !== selectedUnit.id);
+                    this.gameState.selectUnits(newSelection);
+                } else {
+                    // Add to selection
+                    const newSelection = [...state.selectedUnits, selectedUnit.id];
+                    this.gameState.selectUnits(newSelection);
+                }
+            } else {
+                // Clear previous selection and select this one
+                units.forEach(unit => unit.isSelected = false);
+                this.gameState.selectUnit(selectedUnit.id);
+            }
             selectedUnit.isSelected = true;
-            units.forEach(unit => {
-                unit.isSelected = unit.id === selectedUnit.id;
-            });
         } else {
-            // Clear selection
+            // Clear selection if clicking on empty space
             units.forEach(unit => unit.isSelected = false);
             this.gameState.selectUnits([]);
         }
