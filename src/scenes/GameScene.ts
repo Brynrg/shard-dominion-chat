@@ -77,6 +77,7 @@ class GameScene {
         this.harvestSystem.setPlanetAgitationSystem(this._planetAgitationSystem);
 
         // Initialize pathfinding system
+        this.movementSystem.configurePathfinder(state.tiles);
         this.pathfindingSystem.setTiles(state.tiles);
 
         // Initialize fog of war and minimap

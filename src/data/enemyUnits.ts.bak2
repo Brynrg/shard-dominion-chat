@@ -1,0 +1,130 @@
+import { UnitType } from '../core/types';; import type { Position } from ../core.types;
+
+export interface EnemyUnit {
+    id: string;
+    type: UnitType;
+    position: Position;
+    targetPosition: Position | null;
+    speed: number;
+    carrying: number;
+    maxCarrying: number;
+    faction: string;
+    isSelected: boolean;
+    visionRadius: number;
+    hp: number;
+    maxHp: number;
+    isDead: boolean;
+    attackRange: number;
+    attackDamage: number;
+    attackCooldown: number;
+    lastAttackTime: number;
+}
+
+export class EnemyUnitSystem {
+    private units: Map<string, EnemyUnit> = new Map();
+
+    constructor() {
+        // Initialize with default units
+        this.addDefaultUnits();
+    }
+
+    private addDefaultUnits(): void {
+        const defaultUnits: EnemyUnit[] = [
+            {
+                id: 'raider-1',
+                type: UnitType.RAIDER,
+                position: { x: 500, y: 500 },
+                targetPosition: null,
+                speed: 60,
+                carrying: 0,
+                maxCarrying: 0,
+                faction: 'raider',
+                isSelected: false,
+                visionRadius: 8,
+                hp: 80,
+                maxHp: 80,
+                isDead: false,
+                attackRange: 100,
+                attackDamage: 15,
+                attackCooldown: 1000,
+                lastAttackTime: 0
+            },
+            {
+                id: 'raider-2',
+                type: UnitType.RAIDER,
+                position: { x: 550, y: 550 },
+                targetPosition: null,
+                speed: 60,
+                carrying: 0,
+                maxCarrying: 0,
+                faction: 'raider',
+                isSelected: false,
+                visionRadius: 8,
+                hp: 80,
+                maxHp: 80,
+                isDead: false,
+                attackRange: 100,
+                attackDamage: 15,
+                attackCooldown: 1000,
+                lastAttackTime: 0
+            },
+            {
+                id: 'raider-3',
+                type: UnitType.RAIDER,
+                position: { x: 600, y: 500 },
+                targetPosition: null,
+                speed: 60,
+                carrying: 0,
+                maxCarrying: 0,
+                faction: 'raider',
+                isSelected: false,
+                visionRadius: 8,
+                hp: 80,
+                maxHp: 80,
+                isDead: false,
+                attackRange: 100,
+                attackDamage: 15,
+                attackCooldown: 1000,
+                lastAttackTime: 0
+            }
+        ];
+
+        defaultUnits.forEach(unit => {
+            this.units.set(unit.id, unit);
+        });
+    }
+
+    getUnits(): EnemyUnit[] {
+        return Array.from(this.units.values());
+    }
+
+    getUnit(id: string): EnemyUnit | null {
+        return this.units.get(id) || null;
+    }
+
+    addUnit(unit: EnemyUnit): void {
+        this.units.set(unit.id, unit);
+    }
+
+    removeUnit(id: string): boolean {
+        return this.units.delete(id);
+    }
+
+    updateUnits(): void {
+        // Basic AI for enemy units
+        for (const unit of this.units.values()) {
+            if (!unit.targetPosition || Math.random() < 0.02) {
+                unit.targetPosition = {
+                    x: Math.random() * 600,
+                    y: Math.random() * 400
+                };
+            }
+        }
+    }
+}
+
+// Export the default system instance
+export const enemyUnitsSystem = new EnemyUnitSystem();
+
+// Export the old array for backward compatibility
+export const enemyUnits: EnemyUnit[] = enemyUnitsSystem.getUnits();

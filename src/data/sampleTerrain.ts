@@ -70,6 +70,8 @@ for (let y = 0; y < height; y++) {
             y,
             cost,
             hasShards: type === TileType.SHARD_FIELD && Math.random() < 0.7,
+            shardAmount: type === TileType.SHARD_FIELD ? Math.floor(Math.random() * 50) + 50 : 0,
+            maxShardAmount: type === TileType.SHARD_FIELD ? Math.floor(Math.random() * 50) + 50 : 0,
             agitation: 0,
             isBlocked,
             wormRisk,

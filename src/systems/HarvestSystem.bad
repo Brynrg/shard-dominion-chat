@@ -1,8 +1,5 @@
 import type { Position, Unit, Tile } from '../core/types';
-import { TILE_SIZE } from "../core/coords";
-import { UnitType, TileType } from '../core/types';
-
-export class HarvestSystem {
+import { UnitType, TileType, TILE_SIZE } from '../core/types';
     private tiles: Map<string, Tile> = new Map();
     private units: Map<string, Unit> = new Map();
     private processorPosition: Position = { x: 400, y: 300 }; // Default processor position
@@ -46,9 +43,10 @@ export class HarvestSystem {
         if (unit.carrying > 0) {
             const distance = this.getDistance(unit.position, this.processorPosition);
             if (distance < 30) { // Close enough to processor
-                // Deposit cargo - award credits ONLY on deposit
+                // Deposit cargo
                 this.totalDepositedCargo += unit.carrying;
                 unit.carrying = 0;
+                this.units.set(unitId, unit);
                 
                 // Add harvest agitation when depositing
                 if (this.planetAgitationSystem) {
@@ -67,11 +65,9 @@ export class HarvestSystem {
                 const tileDistance = this.getDistance(unit.position, tileWorldCenter);
                 
                 if (tileDistance < 20) { // Close enough to harvest
-                    // Harvest - get amount based on what's available
-                    const harvestAmount = Math.min(10, nearbyShardTile.shardAmount);
-                    unit.carrying = Math.min(unit.carrying + harvestAmount, unit.maxCarrying);
-                    nearbyShardTile.shardAmount -= harvestAmount;
-                    nearbyShardTile.hasShards = nearbyShardTile.shardAmount > 0;
+                    // Harvest
+                    unit.carrying = Math.min(unit.carrying + 10, unit.maxCarrying);
+                    nearbyShardTile.hasShards = false;
                     this.tiles.set(`${nearbyShardTile.x},${nearbyShardTile.y}`, nearbyShardTile);
                     
                     // Add harvest agitation when collecting

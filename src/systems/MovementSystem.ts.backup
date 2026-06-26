@@ -1,12 +1,10 @@
-import type { Position } from "../core/types";
-import { type Unit, type Tile } from '../core/types';
+import { type Unit } from '../core/types';
 import { PathfindingSystem } from './PathfindingSystem';
 import { GameState } from '../core/GameState';
 
 export class MovementSystem {
     private pathfinding: PathfindingSystem = new PathfindingSystem();
     private planetAgitationSystem: any; // Will be set by GameScene
-    private waypointCache: Map<string, Position[]> = new Map(); // Cache world-space waypoints
 
     setPathfinding(pathfinding: PathfindingSystem): void {
         this.pathfinding = pathfinding;
@@ -14,25 +12,6 @@ export class MovementSystem {
 
     setPlanetAgitationSystem(system: any): void {
         this.planetAgitationSystem = system;
-    }
-
-    // Cache world-space waypoints for units
-    private cacheWaypoints(unitId: string, waypoints: Position[]): void {
-        this.waypointCache.set(unitId, waypoints);
-    }
-
-    // Get cached waypoints for a unit
-    private getCachedWaypoints(unitId: string): Position[] | null {
-        return this.waypointCache.get(unitId) || null;
-    }
-
-    // Clear cache when tiles change or for debugging
-    clearWaypointCache(unitId?: string): void {
-        if (unitId) {
-            this.waypointCache.delete(unitId);
-        } else {
-            this.waypointCache.clear();
-        }
     }
 
     moveUnits(units: Unit[], deltaTime: number): void {
@@ -53,16 +32,8 @@ export class MovementSystem {
         // Move units
         for (const unit of units) {
             if (unit.targetPosition) {
-                // Find path to target using cached waypoints if available
-                let path = this.getCachedWaypoints(unit.id);
-                
-                if (!path) {
-                    // No cached path, find new path
-                    path = this.pathfinding.findPath(unit.position, unit.targetPosition);
-                    
-                    // Cache the world-space waypoints
-                    this.cacheWaypoints(unit.id, path);
-                }
+                // Find path to target
+                const path = this.pathfinding.findPath(unit.position, unit.targetPosition);
 
                 if (path.length > 0) {
                     // Move along the path - add movement agitation
@@ -92,14 +63,11 @@ export class MovementSystem {
                         } else {
                             // Reached target
                             unit.targetPosition = null;
-                            // Clear cache when target is reached
-                            this.clearWaypointCache(unit.id);
                         }
                     }
                 } else {
                     // No path found, stay at current position
                     unit.targetPosition = null;
-                    this.clearWaypointCache(unit.id);
                 }
             }
         }
@@ -111,10 +79,7 @@ export class MovementSystem {
     }
 
     getUnit(_unitId: string): Unit | undefined {
+        // This method is kept for compatibility but units are now managed externally
         return undefined;
-    }
-
-    configurePathfinder(tiles: Tile[][]): void {
-        this.pathfinding.setTiles(tiles);
     }
 }
