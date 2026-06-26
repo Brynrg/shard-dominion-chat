@@ -85,17 +85,14 @@ class GameScene {
         });
     }
 
-    private handleAction(_action: any): void {
-        try {
-            // Load game data (this would be from DataLoader in a full implementation)
-            const sampleUnitsData = sampleUnits;  // Use imported sampleUnits directly
-            sampleUnitsData.forEach((unit: any) => {
-                this.harvestSystem.addUnit(unit);
-            });
-        } catch (error) {
-            console.error("Failed to load game data:", error);
-            // Fall back to hardcoded data
-            this.loadFallbackData();
+    private handleAction(action: any): void {
+        switch (action.type) {
+            case 'select':
+                this.handleSelection(action.target);
+                break;
+            case 'move':
+                this.handleMove(action.target);
+                break;
         }
     }
 

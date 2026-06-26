@@ -1,5 +1,6 @@
-import type { GameStateType } from '../core/GameState';
-import type { Position, Unit, UnitType } from '../core/types';
+import type { GameState } from '../core/GameState';
+import type { Position, Unit } from '../core/types';
+import { UnitType } from '../core/types';
 import { BuildingType } from '../core/types';
 
 export interface ProductionQueueItem {
@@ -19,16 +20,16 @@ export interface ProductionCapability {
 }
 
 export class ProductionSystem {
-    private gameState: GameStateType;
+    private gameState: GameState;
     private productionQueue: ProductionQueueItem[] = [];
     private productionCapabilities: Map<BuildingType, ProductionCapability> = new Map();
 
-    constructor(gameState: GameStateType) {
+    constructor(gameState: GameState) {
         this.gameState = gameState;
         this.initializeProductionCapabilities();
     }
 
-    setGameState(gameState: GameStateType): void {
+    setGameState(gameState: GameState): void {
         this.gameState = gameState;
     }
 
@@ -54,7 +55,7 @@ export class ProductionSystem {
     }
 
     addToProductionQueue(buildingId: string, unitType: UnitType, position: Position = { x: 0, y: 0 }): boolean {
-        const building = this.gameState.buildings.find(b => b.id === buildingId);
+        const building = this.gameState.getState().buildings.find(b => b.id === buildingId);
         if (!building) return false;
 
         const capability = this.productionCapabilities.get(building.type);
@@ -65,10 +66,10 @@ export class ProductionSystem {
 
         // Check player has enough credits
         const unitCost = this.getUnitCost(unitType);
-        if (this.gameState.credits < unitCost) return false;
+        if (this.gameState.getState().credits < unitCost) return false;
 
         // Deduct cost
-        this.gameState.credits -= unitCost;
+        this.gameState.getState().credits -= unitCost;
 
         // Add to queue
         const queueItem: ProductionQueueItem = {
@@ -125,7 +126,7 @@ export class ProductionSystem {
     }
 
     private createUnit(productionItem: ProductionQueueItem): void {
-        const producerBuilding = this.gameState.buildings.find(b => b.id === productionItem.producerId);
+        const producerBuilding = this.gameState.getState().buildings.find(b => b.id === productionItem.producerId);
         if (!producerBuilding) return;
 
         const unit: Unit = {
@@ -242,7 +243,7 @@ export class ProductionSystem {
     }
 
     canProduce(buildingId: string, unitType: UnitType): boolean {
-        const building = this.gameState.buildings.find(b => b.id === buildingId);
+        const building = this.gameState.getState().buildings.find(b => b.id === buildingId);
         if (!building) return false;
 
         const capability = this.productionCapabilities.get(building.type);
@@ -281,7 +282,7 @@ export class ProductionSystem {
     } {
         const buildingStatus: { [buildingId: string]: { canProduce: UnitType[]; currentQueue: ProductionQueueItem[] } } = {};
 
-        this.gameState.buildings.forEach(building => {
+        this.gameState.getState().buildings.forEach(building => {
             const capability = this.productionCapabilities.get(building.type);
             buildingStatus[building.id] = {
                 canProduce: capability ? capability.canProduce : [],
