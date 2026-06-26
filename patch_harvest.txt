@@ -1,3 +1,0 @@
-# Simple fix - just change the findNearbyShardTile return type and usage
-# Find the findNearbyShardTile method and change it
-# Then update its usage in updateHarvester
