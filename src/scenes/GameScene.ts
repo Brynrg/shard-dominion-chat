@@ -53,7 +53,7 @@ class GameScene {
         const state = this.gameState.getState();
 
         // Add sample data using loader
-        this.loadGameData();
+        this.loadFallbackData();
 
         // Add terrain
         sampleTerrain.forEach((row: any[], y: number) => {
@@ -85,11 +85,11 @@ class GameScene {
         });
     }
 
-    private handleAction(action: any): void {
+    private handleAction(_action: any): void {
         try {
             // Load game data (this would be from DataLoader in a full implementation)
-            const sampleUnits = require("../data/sampleUnits");
-            sampleUnits.forEach((unit: any) => {
+            const sampleUnitsData = sampleUnits;  // Use imported sampleUnits directly
+            sampleUnitsData.forEach((unit: any) => {
                 this.harvestSystem.addUnit(unit);
             });
         } catch (error) {
@@ -105,21 +105,14 @@ class GameScene {
             this.gameState.addBuilding(building);
         });
 
-        // Add units
-        sampleUnits.forEach(unit => {
+                // Add units
+                sampleUnits.forEach(unit => {
+                    this.harvestSystem.addUnit(unit);
+                });
 
-            private handleAction(action: any): void {
-            switch (action.type) {
-                case 'select':
-                    this.handleSelection(action.target);
-                    break;
-                case 'move':
-                    this.handleMove(action.target);
-                    break;
-            }
-            }
+    }
 
-            private handleMove(target: Position): void {
+    private handleMove(target: Position): void {
         const state = this.gameState.getState();
         const selectedUnits = state.selectedUnits;
 
@@ -392,98 +385,98 @@ class GameScene {
     }
 
     private renderProcessor(ctx: CanvasRenderingContext2D): void {
-            ctx.fillStyle = '#4169e1';
-            ctx.fillRect(400, 300, 40, 40);
-            ctx.fillStyle = 'white';
-            ctx.font = '12px system-ui';
-            ctx.textAlign = 'center';
-            ctx.fillText('PROC', 420, 325);
-        }
+        ctx.fillStyle = '#4169e1';
+        ctx.fillRect(400, 300, 40, 40);
+        ctx.fillStyle = 'white';
+        ctx.font = '12px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('PROC', 420, 325);
+    }
 
-        private renderFogOfWar(ctx: CanvasRenderingContext2D): void {
-            const state = this.gameState.getState();
-            const tileSize = 32;
+    private renderFogOfWar(ctx: CanvasRenderingContext2D): void {
+        const state = this.gameState.getState();
+        const tileSize = 32;
 
-            state.tiles.forEach((row: any[], y: number) => {
-                row.forEach((tile: any, x: number) => {
-                    if (!tile.isVisible) {
-                        // Unexplored - completely black
-                        ctx.fillStyle = '#000000';
-                        ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
-                    } else if (!tile.isExplored) {
-                        // Explored but not currently visible - dim
-                        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-                        ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
-                    }
-                });
-            });
-        }
-
-        private renderMinimap(ctx: CanvasRenderingContext2D, width: number, height: number): void {
-            const state = this.gameState.getState();
-            const minimap = state.minimap;
-            const minimapSize = 150;
-            const minimapX = width - minimapSize - 10;
-            const minimapY = 10;
-            const tileWidth = minimapSize / minimap.width;
-            const tileHeight = minimapSize / minimap.height;
-
-            // Draw minimap background
-            ctx.fillStyle = '#1a1a1a';
-            ctx.fillRect(minimapX, minimapY, minimapSize, minimapSize);
-            ctx.strokeStyle = '#333';
-            ctx.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
-
-            // Draw minimap tiles
-            for (let y = 0; y < minimap.height; y++) {
-                for (let x = 0; x < minimap.width; x++) {
-                    const encoded = minimap.data[y][x];
-                    let color: string;
-
-                    switch (encoded) {
-                        case 0: // Grass
-                            color = '#4a7c4e';
-                            break;
-                        case 1: // Dirt
-                            color = '#8b6f47';
-                            break;
-                        case 2: // Stone
-                            color = '#708090';
-                            break;
-                        case 3: // Shard field
-                            color = '#9370db';
-                            break;
-                        case 4: // Ridge
-                            color = '#555555';
-                            break;
-                        case 5: // Deep crust
-                            color = '#2d4a3e';
-                            break;
-                        default:
-                            color = '#333333';
-                    }
-
-                    ctx.fillStyle = color;
-                    ctx.fillRect(
-                        minimapX + x * tileWidth,
-                        minimapY + y * tileHeight,
-                        tileWidth - 1,
-                        tileHeight - 1
-                    );
+        state.tiles.forEach((row: any[], y: number) => {
+            row.forEach((tile: any, x: number) => {
+                if (!tile.isVisible) {
+                    // Unexplored - completely black
+                    ctx.fillStyle = '#000000';
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
+                } else if (!tile.isExplored) {
+                    // Explored but not currently visible - dim
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+                    ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
                 }
+            });
+        });
+    }
+
+    private renderMinimap(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+        const state = this.gameState.getState();
+        const minimap = state.minimap;
+        const minimapSize = 150;
+        const minimapX = width - minimapSize - 10;
+        const minimapY = 10;
+        const tileWidth = minimapSize / minimap.width;
+        const tileHeight = minimapSize / minimap.height;
+
+        // Draw minimap background
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(minimapX, minimapY, minimapSize, minimapSize);
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(minimapX, minimapY, minimapSize, minimapSize);
+
+        // Draw minimap tiles
+        for (let y = 0; y < minimap.height; y++) {
+            for (let x = 0; x < minimap.width; x++) {
+                const encoded = minimap.data[y][x];
+                let color: string;
+
+                switch (encoded) {
+                    case 0: // Grass
+                        color = '#4a7c4e';
+                        break;
+                    case 1: // Dirt
+                        color = '#8b6f47';
+                        break;
+                    case 2: // Stone
+                        color = '#708090';
+                        break;
+                    case 3: // Shard field
+                        color = '#9370db';
+                        break;
+                    case 4: // Ridge
+                        color = '#555555';
+                        break;
+                    case 5: // Deep crust
+                        color = '#2d4a3e';
+                        break;
+                    default:
+                        color = '#333333';
+                }
+
+                ctx.fillStyle = color;
+                ctx.fillRect(
+                    minimapX + x * tileWidth,
+                    minimapY + y * tileHeight,
+                    tileWidth - 1,
+                    tileHeight - 1
+                );
             }
-
-            // Draw camera viewport
-            const camera = state.camera;
-            const viewportWidth = (width / camera.zoom) * (minimapSize / width);
-            const viewportHeight = (height / camera.zoom) * (minimapSize / height);
-            const viewportX = minimapX + (camera.x / width) * minimapSize;
-            const viewportY = minimapY + (camera.y / height) * minimapSize;
-
-            ctx.strokeStyle = '#00ff00';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(viewportX, viewportY, viewportWidth, viewportHeight);
         }
+
+        // Draw camera viewport
+        const camera = state.camera;
+        const viewportWidth = (width / camera.zoom) * (minimapSize / width);
+        const viewportHeight = (height / camera.zoom) * (minimapSize / height);
+        const viewportX = minimapX + (camera.x / width) * minimapSize;
+        const viewportY = minimapY + (camera.y / height) * minimapSize;
+
+        ctx.strokeStyle = '#00ff00';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(viewportX, viewportY, viewportWidth, viewportHeight);
+    }
 
     start(): void {
         this.gameLoop();
