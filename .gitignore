@@ -25,3 +25,4 @@ Thumbs.db
 temp_*
 patch_*.txt
 test_*.ts
+.claude/launch.json

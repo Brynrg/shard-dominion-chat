@@ -21,7 +21,7 @@ class GameScene {
     private _planetAgitationSystem: PlanetAgitationSystem;
     private combatSystem: CombatSystem;
     private hud: Hud;
-    private debugMode: boolean = false;
+    private debugMode: boolean = true;
     private inputSystem: any; // Reference to InputSystem
 
     constructor(canvas: HTMLCanvasElement) {
@@ -394,8 +394,25 @@ class GameScene {
         const state = this.gameState.getState();
         const tileSize = 32;
 
-        state.tiles.forEach((row: any[], y: number) => {
-            row.forEach((tile: any, x: number) => {
+        // Debug: print total tiles and fog counts
+        if (this.debugMode) {
+            let totalTiles = 0;
+            let visibleTiles = 0;
+            let unexploredTiles = 0;
+            
+            state.tiles.forEach((row) => {
+                row.forEach((tile) => {
+                    totalTiles++;
+                    if (tile.isVisible) visibleTiles++;
+                    if (!tile.isExplored) unexploredTiles++;
+                });
+            });
+            
+            console.log(`Fog debug: total=${totalTiles}, visible=${visibleTiles}, unexplored=${unexploredTiles}`);
+        }
+
+        state.tiles.forEach((row, y) => {
+            row.forEach((tile, x) => {
                 if (!tile.isVisible) {
                     // Unexplored - completely black
                     ctx.fillStyle = '#000000';
@@ -405,6 +422,7 @@ class GameScene {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
                     ctx.fillRect(x * tileSize, y * tileSize, tileSize - 1, tileSize - 1);
                 }
+                // else: visible - no fog overlay, terrain shows through
             });
         });
     }

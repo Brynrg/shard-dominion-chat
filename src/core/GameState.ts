@@ -223,21 +223,52 @@ export class GameState {
         const visible = new Set<string>();
 
         // Reset visibility
+        let totalTiles = 0;
         state.tiles.forEach((row) => {
             row.forEach((tile) => {
                 tile.isVisible = false;
+                totalTiles++;
             });
         });
 
         // Mark tiles visible to each unit
-        state.units.forEach(unit => {
-            const visionRadius = unit.visionRadius;
+        state.units.forEach((unit, unitIndex) => {
+            const visionRadius = unit.visionRadius; // Should be 5-8 as per task
             const unitTile = worldToTile(unit.position);
+
+            // Debug: print unit info
+            console.log(`Unit ${unitIndex}: at world (${unit.position.x}, ${unit.position.y}) -> tile (${unitTile.x}, ${unitTile.y}), radius ${visionRadius}`);
 
             for (let dy = -visionRadius; dy <= visionRadius; dy++) {
                 for (let dx = -visionRadius; dx <= visionRadius; dx++) {
                     const checkX = unitTile.x + dx;
                     const checkY = unitTile.y + dy;
+
+                    if (checkX >= 0 && checkX < state.tiles[0].length &&
+                        checkY >= 0 && checkY < state.tiles.length) {
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= visionRadius) {
+                            const tile = state.tiles[checkY][checkX];
+                            tile.isVisible = true;
+                            visible.add(`${checkX},${checkY}`);
+                        }
+                    }
+                }
+            }
+        });
+
+        // Also mark tiles visible to buildings (vision radius of 6)
+        state.buildings.forEach((building, buildingIndex) => {
+            const visionRadius = 6; // Buildings provide 6-tile vision
+            const buildingTile = worldToTile(building.position);
+
+            // Debug: print building info
+            console.log(`Building ${buildingIndex}: at world (${building.position.x}, ${building.position.y}) -> tile (${buildingTile.x}, ${buildingTile.y}), radius ${visionRadius}`);
+
+            for (let dy = -visionRadius; dy <= visionRadius; dy++) {
+                for (let dx = -visionRadius; dx <= visionRadius; dx++) {
+                    const checkX = buildingTile.x + dx;
+                    const checkY = buildingTile.y + dy;
 
                     if (checkX >= 0 && checkX < state.tiles[0].length &&
                         checkY >= 0 && checkY < state.tiles.length) {
@@ -260,6 +291,9 @@ export class GameState {
                 }
             });
         });
+
+        // Debug: print fog stats
+        console.log(`Fog of war: total tiles=${totalTiles}, visible tiles=${visible.size}, explored tiles=${state.fogOfWar.explored.size}`);
 
         state.fogOfWar.visible = visible;
     }
