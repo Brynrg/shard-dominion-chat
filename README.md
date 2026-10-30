@@ -1,3 +1,7 @@
+> **Retired 2026-10-30.** This was an early Shard Dominion bake-off build and is no longer maintained or deployed.
+> The single active game is [Brynrg/shard-dominion](https://github.com/Brynrg/shard-dominion), playable at https://speedrungames.net/games/shard-dominion/.
+> Last source commit before retirement: `b5856d42c8fa9697103cfb7d8de956f5c3a0dae3`. Deploy instructions below are historical; the deploy workflow is disabled.
+
 # Shard Dominion - Chat Version
 
 A browser-based retro-modern sci-fi RTS where the economy wakes a hostile living planet. Harvest Aether Shards, build Anchor Lattice, manage Planet Agitation, and command your forces across the crystalline surface of Aether Prime.
